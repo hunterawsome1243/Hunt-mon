@@ -83,5 +83,12 @@ export const LOOKS: Record<string, Look> = {
   ilsa: { skin: '#f0d0b0', hair: '#4a3a6a', shirt: '#e8e2d0', pants: '#5a6a4a', hairStyle: 'long', accent: '#4aa89a' },
   odette: { skin: '#8a5a3a', hair: '#1f1a2a', shirt: '#e8895a', pants: '#f0e2c0', hairStyle: 'long', accent: '#f2f2f2' },
   nurse: { skin: '#f4d4b8', hair: '#e878a8', shirt: '#f0f0f8', pants: '#e0a8c0', hairStyle: 'long', accent: '#e0435f' },
+  jace: { skin: '#d9a070', hair: '#2f8f9a', shirt: '#e8823a', pants: '#3a3a52', hairStyle: 'short', accent: '#f8f0d0' },
+  orrin: { skin: '#e8dcd8', hair: '#c8c8e0', shirt: '#3a2a5c', pants: '#2a1d3e', hairStyle: 'long', accent: '#9a7ad8' },
+  hiker: { skin: '#e0b088', hair: '#6a4a2a', shirt: '#8a6a3a', pants: '#4a4a3a', hairStyle: 'cap', accent: '#5a8a4a' },
+  lass: { skin: '#f2c9a0', hair: '#e878a8', shirt: '#7aa8e8', pants: '#e8e0f0', hairStyle: 'long' },
+  scout: { skin: '#c98e62', hair: '#1f1a2a', shirt: '#4a8a4a', pants: '#5a4a3a', hairStyle: 'cap', accent: '#f2d95c' },
+  brawler: { skin: '#d9a070', hair: '#3a2a1a', shirt: '#c8452f', pants: '#2a2a3a', hairStyle: 'short' },
+  mystic: { skin: '#f0d0c0', hair: '#7a58b8', shirt: '#5a3a8a', pants: '#3a2a5a', hairStyle: 'long', accent: '#e0a8f0' },
   shopkeeper: { skin: '#c98e62', hair: '#2a1a1a', shirt: '#4aa89a', pants: '#3a3a5a', hairStyle: 'long' },
 };

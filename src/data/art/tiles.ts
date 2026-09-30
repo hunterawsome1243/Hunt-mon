@@ -1,5 +1,6 @@
 import { PixelBuffer } from '../../engine/gfx/PixelBuffer';
 import { Rng } from '../../engine/rng';
+import { TILES2 } from './tiles2';
 
 export interface TileDef {
   frames: number;
@@ -233,7 +234,7 @@ const roofRed: [number, number, number, number] = [C.r0, C.r1, C.r2, C.r3];
 const roofBlue: [number, number, number, number] = [C.w3, C.w0, C.w1, 41];
 const s = (f: () => PixelBuffer, extra: Partial<TileDef> = {}): TileDef => ({ frames: 1, gen: f, ...extra });
 
-export const TILES: Record<string, TileDef> = {
+const BASE: Record<string, TileDef> = {
   grass: s(() => grass('a')),
   grass2: s(() => grass('b')),
   tall_grass: { frames: 4, animMs: 260, grass: true, gen: tallGrass },
@@ -282,3 +283,5 @@ export const TILES: Record<string, TileDef> = {
   mat: s(mat),
   void: s(() => buf().fill(C.o), { solid: true }),
 };
+
+export const TILES: Record<string, TileDef> = { ...BASE, ...TILES2 };

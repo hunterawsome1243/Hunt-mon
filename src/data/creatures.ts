@@ -105,6 +105,21 @@ const LIST: C[] = [
   [31, 'dreamoth', 'Dreamoth', ['mind', 'gale'], [60, 44, 52, 84, 82, 76], 60, 'medium', 140, null,
     [[1, 'gust'], [8, 'hypnosis'], [14, 'mind_pulse'], [20, 'psy_wave'], [28, 'calm_mind'], [34, 'mind_crush']],
     art('insect', ['#c8b8f0', '#7868b0', '#f0e8ff', '#f088c8', '#f8f4ff'], 1.0, ['wings', 'bigeyes']), 'Dust from its wings brings vivid dreams.'],
+  [32, 'aurorix', 'Aurorix', ['mind', 'frost'], [90, 70, 85, 120, 110, 95], 3, 'slow', 290,
+    null, [[1, 'frost_breath'], [1, 'mind_pulse'], [20, 'ice_beam'], [26, 'calm_mind'], [32, 'mind_crush'], [38, 'recover']],
+    art('floater', ['#a8c8f0', '#5a78b8', '#e8f4ff', '#f0a8e0', '#ffffff'], 1.1, ['horns', 'crest_crystal', 'bigeyes'], '#f8f8a0'), 'The guardian of the Lumen crystal. Its body is a shape the light makes when it remembers something.'],
+  [33, 'honeypaw', 'Honeypaw', ['normal'], [70, 66, 62, 50, 58, 46], 45, 'medium', 120,
+    null, [[1, 'tackle'], [1, 'growl'], [5, 'scratch'], [10, 'harden'], [15, 'body_slam'], [20, 'recover'], [26, 'take_down']],
+    art('quad', ['#e0b060', '#a07430', '#f8d890', '#f0a8a0', '#fff0d0'], 0.85, ['ears', 'belly', 'bigeyes']), 'A stray cub that naps under ovens. Smells faintly of toast.'],
+  [34, 'ironpaw', 'Ironpaw', ['fist', 'stone'], [72, 92, 88, 40, 52, 44], 45, 'slow', 140,
+    null, [[1, 'quick_jab'], [1, 'harden'], [8, 'pebble_shot'], [14, 'karate_chop'], [20, 'brick_break'], [26, 'bulk_up'], [32, 'rock_slide']],
+    art('biped', ['#7a7a8c', '#46465a', '#b0b0c4', '#e8623a', '#c8c8d8'], 0.9, ['armor', 'ears', 'fangs']), 'Raised from a cub in a gym. Shoulders like boulders and the heart of a puppy.'],
+  [35, 'quillbit', 'Quillbit', ['mind', 'gale'], [58, 50, 54, 82, 74, 80], 45, 'medium', 130,
+    null, [[1, 'gust'], [1, 'mind_pulse'], [8, 'quick_dash'], [14, 'psy_wave'], [20, 'air_cutter'], [26, 'calm_mind'], [32, 'mind_crush']],
+    art('bird', ['#6ab0a8', '#2f6a66', '#a8e0d8', '#f8e050', '#e8f6f2'], 0.85, ['wings', 'ears', 'belly', 'bigeyes']), 'A field assistant bird that hums when it finds a new pattern.'],
+  [36, 'cocoamoth', 'Cocoamoth', ['normal', 'mind'], [64, 48, 60, 76, 76, 58], 45, 'medium', 125,
+    null, [[1, 'gust'], [1, 'sing'], [9, 'mind_pulse'], [15, 'hypnosis'], [21, 'recover'], [27, 'psy_wave'], [33, 'calm_mind']],
+    art('insect', ['#b08058', '#6e4c30', '#e0b890', '#f0d0a0', '#f8ecd8'], 0.95, ['wings', 'stripes', 'bigeyes']), 'Fluffy, warm to the touch, and strangely fond of coffee.'],
 ];
 
 export const SPECIES: Record<string, SpeciesDef> = Object.fromEntries(LIST.map(([dex, id, name, types, base, catchRate, curve, baseXp, evo, learn, a, dexText]) => [id, {

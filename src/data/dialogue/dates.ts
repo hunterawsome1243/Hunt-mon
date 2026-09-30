@@ -12,7 +12,7 @@ function scene(id: string, npc: string, beats: Array<[string, Expression, string
     nodes[key] = line(sp, pr, tx, next);
   });
   if (choiceAt) {
-    nodes.ch = { speaker: '', text: choiceAt.prompt, choices: choiceAt.options.map(([t, resp], k) => ({ text: t, next: `ch${k}` })) };
+    nodes.ch = { speaker: '', text: choiceAt.prompt, choices: choiceAt.options.map(([t], k) => ({ text: t, next: `ch${k}` })) };
     choiceAt.options.forEach(([, resp], k) => { nodes[`ch${k}`] = line(beats[choiceAt.after][0], 'blush', resp, `b${choiceAt.after + 1}`); });
   }
   nodes.fin = { effects: [{ flag: done }, { flag: `date.${npc}` }], next: 'out' };

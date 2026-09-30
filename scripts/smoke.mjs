@@ -36,8 +36,8 @@ try {
   await page.keyboard.down('Shift'); await page.keyboard.down('ArrowRight'); await sleep(1500);
   await page.keyboard.up('ArrowRight'); await page.keyboard.up('Shift'); await sleep(300);
   await page.screenshot({ path: 'shots/03_run.png' });
-  // talk to the elder (17,12): stand at (18,12) facing left
-  await page.evaluate(() => window.__game.scene.getScene('overworld').warpTo('emberwick', 18, 12, 'left'));
+  // talk to a villager at (26,17): stand at (27,17) facing left
+  await page.evaluate(() => window.__game.scene.getScene('overworld').warpTo('emberwick', 27, 17, 'left'));
   await sleep(900);
   await page.keyboard.press('z'); await sleep(200);
   if (!(await st()).dialogue) fail('interaction did not open dialogue');
@@ -49,10 +49,11 @@ try {
   // north exit to route 1
   await page.evaluate(() => window.__game.scene.getScene('overworld').warpTo('emberwick', 15, 3, 'up'));
   await sleep(900);
+  await page.evaluate(() => { window.__hunt.setFlag('starter.chosen'); window.__hunt.setFlag('quest.rival1'); });
   await page.keyboard.down('ArrowUp'); await sleep(1600); await page.keyboard.up('ArrowUp'); await sleep(900);
   if ((await st()).map !== 'route1') fail('north exit did not reach route1: ' + JSON.stringify(await st()));
   // tall grass: walk in it
-  await page.evaluate(() => window.__game.scene.getScene('overworld').warpTo('route1', 8, 14, 'up'));
+  await page.evaluate(() => window.__game.scene.getScene('overworld').warpTo('route1', 10, 20, 'up'));
   await sleep(900);
   await page.keyboard.down('ArrowUp'); await sleep(900); await page.keyboard.up('ArrowUp');
   await page.screenshot({ path: 'shots/05_route1.png' });
@@ -64,7 +65,7 @@ try {
   await press('z'); await untilMenu();
   if (!(await st()).menu) fail('Mira menu never appeared');
   await sleep(500); await page.screenshot({ path: 'shots/06_mira_menu.png' });
-  await press('ArrowDown'); await press('ArrowDown'); await press('z'); await sleep(300); await untilMenu(); await sleep(700); // Flirt
+  await press('ArrowDown'); await press('ArrowDown'); await press('ArrowDown'); await press('z'); await sleep(300); await untilMenu(); await sleep(700); // Flirt
   if (!(await st()).menu) fail('flirt menu missing');
   await page.screenshot({ path: 'shots/07_flirt_menu.png' });
   await press('z'); await sleep(200); // "Your prices are a crime." (witty, liked)
@@ -85,7 +86,7 @@ try {
   const hunt = (fn, ...a) => page.evaluate(([f, args]) => window.__hunt[f](...args), [fn, a]);
   const battleActive = () => page.evaluate(() => window.__game.scene.isActive('battle'));
   const waitBattle = async (ms = 8000) => { for (let i = 0; i < ms / 100 && !(await battleActive()); i++) await sleep(100); };
-  await page.evaluate(() => window.__game.scene.getScene('overworld').warpTo('route1', 8, 20, 'up'));
+  await page.evaluate(() => window.__game.scene.getScene('overworld').warpTo('route1', 10, 20, 'up'));
   await sleep(900);
   await hunt('giveStarter', 'cinderpup', 5);
   if ((await hunt('party')).length !== 1) fail('starter not given');
@@ -129,7 +130,7 @@ try {
   await hunt('setLevel', 0, 10); // keep the trainer fight winnable so the test is deterministic
   console.log('[smoke] trainer');
   // trainer battle with line of sight
-  await page.evaluate(() => window.__game.scene.getScene('overworld').warpTo('route1', 9, 20, 'up'));
+  await page.evaluate(() => window.__game.scene.getScene('overworld').warpTo('route1', 10, 32, 'up'));
   await sleep(1000);
   await page.keyboard.down('ArrowUp'); await sleep(1900); await page.keyboard.up('ArrowUp');
   for (let i = 0; i < 40 && !(await battleActive()); i++) { await page.keyboard.press('z'); await sleep(350); } // dismiss the challenge dialogue
@@ -142,7 +143,7 @@ try {
   }
   console.log('[smoke] evolution scenario');
   // ---------------- scenario: level-up -> evolution -> learn prompt ----------------
-  await page.evaluate(() => window.__game.scene.getScene('overworld').warpTo('route1', 8, 22, 'up'));
+  await page.evaluate(() => window.__game.scene.getScene('overworld').warpTo('route1', 10, 22, 'up'));
   await sleep(1000);
   await hunt('setLevel', 0, 15);
   await hunt('nearLevelUp', 0);

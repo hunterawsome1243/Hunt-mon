@@ -106,7 +106,7 @@ function leafPath(seed: string): PixelBuffer {
 function darkGrass(f: number): PixelBuffer {
   const b = forestFloor('dg');
   const sway = [0, 1, 0, -1][f];
-  for (let x = 0; x < 16; x += 2) {
+  for (let x = 1; x < 16; x += 3) {
     const h = 6 + ((x * 5) % 5);
     for (let y = 0; y < h; y++) { const off = Math.round((sway * (h - y)) / 4); b.set(x + off, 15 - y, y < 2 ? 11 : y < h - 3 ? 10 : 13); b.set(x + 1 + off, 15 - y + 1 > 15 ? 15 : 15 - y + 1, 13); }
   }

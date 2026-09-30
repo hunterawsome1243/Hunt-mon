@@ -25,6 +25,8 @@ export interface BattleInit {
   foeParty: Creature[];
   trainer?: TrainerDef;
   terrain: Terrain;
+  /** story battle driven by a dialogue script (no post-battle chatter, caller continues the scene) */
+  scripted?: boolean;
 }
 export interface BattleOutcome { result: BattleResult; trainerId?: string; prize?: number }
 

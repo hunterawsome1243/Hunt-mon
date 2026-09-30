@@ -35,6 +35,8 @@ export class GameState {
   /** last heal point: map + tile */
   home: { map: string; x: number; y: number } = { map: 'house_player', x: 5, y: 5 };
   steps = 0;
+  /** where to return to after a date scene */
+  returnTo: { map: string; x: number; y: number; dir: string } | null = null;
 
   flag(k: string): boolean { return this.flags[k] === true; }
   setFlag(k: string, v = true): void { this.flags[k] = v; }
@@ -61,7 +63,7 @@ export class GameState {
 
   toJSON(): object {
     return { look: this.look, playMs: this.playMs, options: this.options, playerName: this.playerName, flags: this.flags, vars: this.vars, day: this.day, romance: this.romance, party: this.party, box: this.box,
-      bag: this.bag, money: this.money, badges: this.badges, dex: this.dex, home: this.home, steps: this.steps };
+      bag: this.bag, money: this.money, badges: this.badges, dex: this.dex, home: this.home, steps: this.steps, returnTo: this.returnTo };
   }
   load(o: Partial<GameState>): void {
     this.look = o.look ?? 'hero_a';
@@ -80,6 +82,7 @@ export class GameState {
     this.dex = JSON.parse(JSON.stringify(o.dex ?? { seen: {}, caught: {} }));
     this.home = o.home ?? { map: 'house_player', x: 5, y: 5 };
     this.steps = o.steps ?? 0;
+    this.returnTo = o.returnTo ?? null;
   }
   reset(): void { this.load({}); }
 }

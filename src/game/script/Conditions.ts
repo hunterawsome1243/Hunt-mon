@@ -16,6 +16,8 @@ export function evalCond(c: Cond | undefined, s: GameState): boolean {
     const a = s.affection(c.affection);
     return (c.gte === undefined || a >= c.gte) && (c.lt === undefined || a < c.lt);
   }
+  if ('has' in c) return (s.bag[c.has] ?? 0) > 0;
+  if ('dexCaught' in c) return Object.keys(s.dex.caught).length >= c.dexCaught;
   if ('brushed' in c) return (s.romance[c.brushed]?.brushUntilDay ?? 0) > s.day;
   if ('day' in c) return (s.day % 2 === 0) === (c.day === 'even');
   if ('all' in c) return c.all.every((x) => evalCond(x, s));

@@ -9,4 +9,9 @@ export const SHOPS: Record<string, ShopDef> = {
       { flag: 'badge.second', items: ['hyper_potion', 'full_heal', 'ultra_orb'] },
     ],
   },
+  cafe: { id: 'cafe', name: 'Moth & Mug Menu', stock: ['cocoa', 'sweet_bun', 'trail_bar', 'wildflower'] },
+  brindle: {
+    id: 'brindle', name: 'Brindlemoor Mart', stock: ['potion', 'super_potion', 'antidote', 'burn_salve', 'wake_bell', 'zap_relief', 'catch_orb', 'great_orb'],
+    unlock: [{ flag: 'badge.tidal', items: ['hyper_potion', 'full_heal', 'revive', 'ultra_orb'] }],
+  },
 };

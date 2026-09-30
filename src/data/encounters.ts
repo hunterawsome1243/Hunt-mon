@@ -10,4 +10,16 @@ export const ENCOUNTERS: Record<string, EncounterTable> = {
     { species: 'nibbit', min: 2, max: 5, weight: 35 }, { species: 'wrenlet', min: 3, max: 5, weight: 30 },
     { species: 'sparkit', min: 3, max: 5, weight: 15 }, { species: 'stingfly', min: 3, max: 5, weight: 15 }, { species: 'petalpuff', min: 4, max: 5, weight: 5 },
   ] },
+  route2: { rate: 0.15, terrain: 'grass', entries: [
+    { species: 'wrenlet', min: 8, max: 11, weight: 25 }, { species: 'nibbit', min: 8, max: 11, weight: 20 }, { species: 'brawlcub', min: 9, max: 12, weight: 20 },
+    { species: 'coilsnap', min: 9, max: 12, weight: 15 }, { species: 'sparkit', min: 9, max: 12, weight: 15 }, { species: 'stingfly', min: 9, max: 12, weight: 5 },
+  ] },
+  mistwood: { rate: 0.17, terrain: 'forest', entries: [
+    { species: 'petalpuff', min: 13, max: 17, weight: 25 }, { species: 'stingfly', min: 13, max: 16, weight: 20 }, { species: 'toxwasp', min: 15, max: 18, weight: 10 },
+    { species: 'wispling', min: 14, max: 17, weight: 15 }, { species: 'coilsnap', min: 14, max: 17, weight: 15 }, { species: 'dreamoth', min: 16, max: 18, weight: 8 }, { species: 'brawlcub', min: 14, max: 17, weight: 7 },
+  ] },
+  hollowdeep: { rate: 0.2, terrain: 'cave', entries: [
+    { species: 'glimmerbat', min: 17, max: 21, weight: 25 }, { species: 'pebbleback', min: 17, max: 21, weight: 25 }, { species: 'frostkin', min: 18, max: 22, weight: 20 },
+    { species: 'wispling', min: 18, max: 22, weight: 15 }, { species: 'brawlcub', min: 18, max: 22, weight: 10 }, { species: 'coilsnap', min: 18, max: 22, weight: 5 },
+  ] },
 };

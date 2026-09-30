@@ -2,7 +2,10 @@ import Phaser from 'phaser';
 import { DEPTH, DIRS, Dir, TILE, VIEW_H, VIEW_W } from '../config';
 import { TILES } from '../data/art/tiles';
 import { MAPS, START } from '../data/maps';
-import type { MapDef, NpcDef } from '../data/types';
+import type { MapDef, NpcDef, TriggerDef } from '../data/types';
+import { evalCond } from '../game/script/Conditions';
+import { partyFor } from '../data/trainers';
+import { BADGES } from '../data/badges';
 import { Actor } from '../engine/grid/Actor';
 import { InputManager } from '../engine/input/InputManager';
 import { DialogueBox, textStyle } from '../engine/ui/DialogueBox';
@@ -26,6 +29,8 @@ import type { BattleInit, BattleOutcome } from './BattleScene';
 
 interface AnimTile { sprite: Phaser.GameObjects.Image; key: string; frames: number; ms: number }
 interface NpcRt { def: NpcDef; actor: Actor; homeX: number; homeY: number; timer: number }
+interface PendingBattle { init: BattleInit }
+type PickupDefLite = { item: string; qty?: number; flag: string; text?: string };
 interface SceneData { map?: string; x?: number; y?: number; dir?: Dir; msg?: string[] }
 
 export class OverworldScene extends Phaser.Scene {
@@ -73,7 +78,7 @@ export class OverworldScene extends Phaser.Scene {
     this.player = new Actor(this, 'player', `c_${state.look}`, sx, sy, sd);
     this.player.onArrive = (a) => this.onPlayerArrive(a);
 
-    for (const def of this.map.npcs) {
+    for (const def of this.map.npcs.filter((n) => evalCond(n.cond, state))) {
       const actor = new Actor(this, def.id, `c_${def.look}`, def.x, def.y, def.dir);
       this.npcs.push({ def, actor, homeX: def.x, homeY: def.y, timer: 800 + rng.int(0, 2000) });
     }
@@ -90,7 +95,10 @@ export class OverworldScene extends Phaser.Scene {
     this.centerCamera(true);
     this.cameras.main.fadeIn(280, 0, 0, 0);
     (window as unknown as { __hunt?: unknown }).__hunt = this.debugApi();
-    if (this.seed.msg) {
+    if (this.map.autorun) {
+      this.locked = true;
+      this.time.delayedCall(1000, () => { void this.runner.run(this.map.autorun!).catch((e) => { console.error('autorun failed', e); this.locked = false; }); });
+    } else if (this.seed.msg) {
       this.locked = true;
       this.time.delayedCall(450, () => { void this.dialogue.say({ text: this.seed.msg!.join(' ') }).then(() => { this.locked = false; }); });
     }
@@ -100,6 +108,7 @@ export class OverworldScene extends Phaser.Scene {
     return {
       state: () => ({ day: state.day, aff: { ...Object.fromEntries(Object.entries(state.romance).map(([k, v]) => [k, v.affection])) }, map: this.map.id, x: this.player.tx, y: this.player.ty, dir: this.player.dir, moving: this.player.moving, locked: this.locked, dialogue: this.dialogue.active, menu: this.dialogue.hasMenu }),
       maps: Object.keys(MAPS),
+      spawnOf: (id: string) => MAPS[id].spawn ?? { x: Math.floor(MAPS[id].w / 2), y: MAPS[id].h - 3, dir: 'up' },
       giveStarter: (id: string, lv = 5) => { if (!state.party.length) state.giveStarter(id, lv); },
       wild: (sp: string, lv: number) => this.startBattle({ foeParty: [createCreature(sp, lv)], terrain: this.terrain() }),
       trainerBattle: (id: string) => { const d = TRAINERS[id]; return this.startBattle({ foeParty: d.party.map((p) => createCreature(p.species, p.level)), trainer: d, terrain: this.terrain() }); },
@@ -113,6 +122,11 @@ export class OverworldScene extends Phaser.Scene {
       hpAll: (hp: number) => { state.party.forEach((c) => { c.hp = Math.min(c.hp, hp); }); },
       money: () => state.money,
       flag: (k: string) => state.flag(k),
+      setFlag: (k: string, v = true) => state.setFlag(k, v),
+      setAff: (npc: string, v: number) => { state.rec(npc).affection = v; state.rec(npc).pending = []; },
+      warp: (map: string, x: number, y: number, dir: Dir = 'down') => this.warpTo(map, x, y, dir),
+      say: (id: string) => this.runner.run(id),
+      giveBadge: (id: string) => { void this.command('badge', id); },
     };
   }
 
@@ -131,7 +145,8 @@ export class OverworldScene extends Phaser.Scene {
       this.placeTile(draws.under, g, x, y, DEPTH.ground + 0.1);
       if (gd.solid) this.solid[y][x] = true;
       if (gd.grass) this.grass[y][x] = true;
-      const d = this.map.deco[y][x];
+      let d = this.map.deco[y][x];
+      if (d === 'sparkle' && this.map.pickups.some((p) => p.x === x && p.y === y && state.flag(p.flag))) d = null;
       if (d) {
         const dd = TILES[d];
         if (dd.solid) this.solid[y][x] = true;
@@ -178,11 +193,14 @@ export class OverworldScene extends Phaser.Scene {
     const w = this.map.warps.find((wp) => wp.x === a.tx && wp.y === a.ty);
     if (w) { this.warpTo(w.to, w.tx, w.ty, w.dir); return; }
     state.steps++;
+    if (this.collectPickup(a.tx, a.ty)) return;
+    const trig = this.map.triggers.find((t) => t.x === a.tx && t.y === a.ty && evalCond(t.cond, state));
+    if (trig) { void this.runTrigger(trig); return; }
     if (this.grass[a.ty][a.tx]) { this.rustle(a.tx, a.ty); this.maybeEncounter(); }
   }
 
   // ---------- battles ----------
-  private terrain(): BattleInit['terrain'] { return ENCOUNTERS[this.map.id]?.terrain ?? (this.map.indoor ? 'gym' : 'grass'); }
+  private terrain(): BattleInit['terrain'] { return this.map.terrain ?? ENCOUNTERS[this.map.id]?.terrain ?? (this.map.indoor ? 'gym' : 'grass'); }
 
   private maybeEncounter(): void {
     const table = ENCOUNTERS[this.map.id];
@@ -201,36 +219,68 @@ export class OverworldScene extends Phaser.Scene {
     });
   }
 
-  /** Cinematic intro (flashes + shutter wipe), then hands over to the battle scene. */
-  async startBattle(init: BattleInit): Promise<void> {
+  private pickupAt(x: number, y: number): PickupDefLite | undefined { return this.map.pickups.find((p) => p.x === x && p.y === y && !state.flag(p.flag)); }
+
+  private collectPickup(x: number, y: number): boolean {
+    const p = this.pickupAt(x, y);
+    if (!p) return false;
+    state.setFlag(p.flag);
+    state.addItem(p.item, p.qty ?? 1);
+    const i = this.animTiles.findIndex((t) => t.key === 't_sparkle' && Math.round(t.sprite.x / TILE) === x && Math.round(t.sprite.y / TILE) === y);
+    if (i >= 0) { this.animTiles[i].sprite.destroy(); this.animTiles.splice(i, 1); }
+    sfx('pickup');
+    this.ui.toast(p.text ?? `Found ${ITEMS[p.item].name}!`);
+    return true;
+  }
+
+  private async runTrigger(t: TriggerDef): Promise<void> {
+    this.locked = true;
+    try {
+      await this.runner.run(t.dialogue);
+      if (t.once) state.setFlag(t.once);
+      if (t.push) {
+        const d = DIRS[t.push];
+        if (!this.blocked(this.player.tx + d.x, this.player.ty + d.y, this.player)) { this.player.step(t.push, false); await this.until(() => !this.player.moving); }
+      }
+    } finally { this.locked = false; }
+  }
+
+  /** Cinematic intro (flashes + shutter wipe), then hands over to the battle scene. Resolves when the player is back. */
+  async startBattle(init: BattleInit): Promise<BattleOutcome> {
     this.locked = true;
     sfx('battle_start');
     const cam = this.cameras.main;
     for (let i = 0; i < 2; i++) { safeFlash(cam, 140); await new Promise((r) => this.time.delayedCall(230, () => r(null))); }
     this.bars = await shutterClose(this, 560);
-    this.events.once('wake', (_sys: unknown, data: BattleOutcome) => { void this.onBattleEnd(data); });
-    this.scene.sleep();
-    this.scene.launch('battle', init);
+    return new Promise<BattleOutcome>((res) => {
+      this.events.once('wake', (_sys: unknown, data: BattleOutcome) => { void this.onBattleEnd(data, init).then((resume) => { if (resume) res(data); }); });
+      this.scene.sleep();
+      this.scene.launch('battle', init);
+    });
   }
 
-  private async onBattleEnd(o: BattleOutcome): Promise<void> {
+  /** Returns false when the scene is being replaced (blackout) and callers should not continue. */
+  private async onBattleEnd(o: BattleOutcome, init: PendingBattle['init']): Promise<boolean> {
     this.stepsSince = 0;
     this.player.moving = false;
     await shutterRetract(this, this.bars, 480);
     this.bars = [];
+    state.vars['battle.won'] = o.result === 'win' ? 1 : 0;
+    state.vars['battle.result'] = { win: 1, caught: 2, run: 3, lose: 0 }[o.result];
     if (o.result === 'lose') {
       state.healParty();
       state.money = Math.floor(state.money / 2);
       const h = state.home;
       this.warpTo(h.map, h.x, h.y, 'down', ['You scurry back home and rest up...', 'Your creatures are fully healed.']);
-      return;
+      return false;
     }
     if (o.trainerId) {
       state.setFlag('trainer.' + o.trainerId);
       const def = TRAINERS[o.trainerId];
-      if (def) await this.dialogue.say({ speaker: def.name, text: def.post.join(' ') });
+      if (def && !init.scripted) await this.dialogue.say({ speaker: def.name, text: def.post.join(' ') });
     }
-    this.locked = false;
+    if (!init.scripted) this.locked = false;
+    return true;
   }
 
   private checkTrainers(): void {
@@ -262,7 +312,7 @@ export class OverworldScene extends Phaser.Scene {
     const opp: Record<Dir, Dir> = { up: 'down', down: 'up', left: 'right', right: 'left' };
     this.player.face(opp[n.actor.dir]);
     await this.dialogue.say({ speaker: def.name, text: def.pre.join(' ') });
-    await this.startBattle({ foeParty: def.party.map((p) => createCreature(p.species, p.level)), trainer: def, terrain: this.terrain() });
+    await this.startBattle({ foeParty: partyFor(def, (k) => state.flag(k)).map((p) => createCreature(p.species, p.level)), trainer: def, terrain: this.terrain() });
   }
 
   private rustle(tx: number, ty: number): void {
@@ -322,6 +372,47 @@ export class OverworldScene extends Phaser.Scene {
   }
 
   private async command(name: string, arg?: string): Promise<void> {
+    if (name === 'battle' && arg) {
+      const def = TRAINERS[arg];
+      await this.startBattle({ foeParty: partyFor(def, (k) => state.flag(k)).map((p) => createCreature(p.species, p.level)), trainer: def, terrain: this.terrain(), scripted: true });
+      return;
+    }
+    if (name === 'wild' && arg) {
+      const [sp, lv] = arg.split(',');
+      await this.startBattle({ foeParty: [createCreature(sp, Number(lv))], terrain: this.terrain(), scripted: true });
+      return;
+    }
+    if (name === 'badge' && arg) {
+      if (!state.badges.includes(arg)) state.badges.push(arg);
+      state.setFlag(`badge.${arg}`);
+      state.setFlag(state.badges.length >= 2 ? 'badge.second' : 'badge.first');
+      sfx('badge');
+      this.ui.toast(`Got the ${BADGES.find((b) => b.id === arg)?.name ?? 'badge'}!`);
+      await new Promise<void>((r) => this.time.delayedCall(1600, () => r()));
+      return;
+    }
+    if (name === 'take' && arg) { state.bag[arg] = Math.max(0, (state.bag[arg] ?? 0) - 1); return; }
+    if (name === 'warp' && arg) { const [m, x, y, d] = arg.split(','); this.warpTo(m, Number(x), Number(y), (d as Dir) ?? 'down'); await new Promise(() => undefined); }
+    if (name === 'date' && arg) {
+      state.returnTo = { map: this.map.id, x: this.player.tx, y: this.player.ty, dir: this.player.dir };
+      const m = MAPS[`date_${arg}`];
+      const sp = m.spawn ?? { x: 2, y: 2, dir: 'up' as Dir };
+      this.warpTo(m.id, sp.x, sp.y, sp.dir);
+      await new Promise(() => undefined); // the scene is being replaced
+    }
+    if (name === 'return') {
+      const r = state.returnTo ?? { map: 'emberwick', x: 7, y: 12, dir: 'down' };
+      state.returnTo = null;
+      nextDay(state);
+      this.warpTo(r.map, r.x, r.y, r.dir as Dir, ['What a lovely evening. You head home as the stars come out.']);
+      await new Promise(() => undefined);
+    }
+    if (name === 'end') {
+      const cam = this.cameras.main;
+      await new Promise<void>((res) => { cam.once('camerafadeoutcomplete', () => res()); cam.fadeOut(900, 255, 255, 255); });
+      this.scene.start('end');
+      await new Promise(() => undefined);
+    }
     if (name === 'shop') { await this.runMenu({ screen: 'shop', shop: arg ?? 'mira' }); return; }
     if (name === 'pc') { await this.runMenu({ screen: 'box' }); return; }
     if (name === 'heal') {

@@ -19,5 +19,12 @@ export const ITEMS: Record<string, ItemDef> = Object.fromEntries(([
   { id: 'pocket_gadget', name: 'Pocket Gadget', desc: 'A clicking, whirring little gizmo.', price: 500, kind: 'gift', tags: ['tech'] },
   { id: 'shiny_pebble', name: 'Shiny Pebble', desc: 'Unusually smooth and sparkly.', price: 400, kind: 'gift', tags: ['rare'] },
   { id: 'odd_trinket', name: 'Odd Trinket', desc: 'You are not sure what it is.', price: 40, kind: 'gift', tags: ['junk'] },
+  { id: 'cocoa', name: 'House Cocoa', desc: 'Restores 30 HP. Odette\'s recipe, with a pinch of salt.', price: 180, kind: 'heal', heal: 30, tags: ['sweet', 'food'] },
+  { id: 'parcel', name: 'Elder\'s Parcel', desc: 'A wrapped parcel for Dr. Ilsa in Brindlemoor.', price: 0, kind: 'key' },
+  { id: 'recipe_book', name: 'Gran\'s Recipe Book', desc: 'A green notebook with a burnt corner. Mira\'s treasure.', price: 0, kind: 'key' },
+  { id: 'lucky_band', name: 'Faded Wristband', desc: 'A worn blue band. It smells of liniment and victory.', price: 0, kind: 'key' },
+  { id: 'tea_leaves', name: 'Glowcap Leaves', desc: 'Rare leaves that shimmer faintly in the dark.', price: 0, kind: 'key' },
+  { id: 'glow_lens', name: 'Glow Lens', desc: 'Ilsa\'s field lens. It reveals the glow even in dim light.', price: 0, kind: 'key' },
+  { id: 'power_band', name: 'Power Band', desc: 'Rhea\'s spare band. Makes you feel slightly invincible.', price: 0, kind: 'gift', tags: ['sport', 'rare'] },
   { id: 'sweet_bun', name: 'Sweet Bun', desc: 'A fresh bun. Mira’s favorite recipe.', price: 120, kind: 'gift', tags: ['sweet', 'food'] },
 ] as ItemDef[]).map((i) => [i.id, i]));

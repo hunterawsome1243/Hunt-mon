@@ -9,7 +9,20 @@ export interface NpcDef {
   dialogue?: string;
   /** Trainer id (data/trainers.ts). Sees the player along `sight` tiles in facing direction. */
   trainer?: { id: string; sight: number };
+  /** only present while this condition holds (evaluated when the map loads) */
+  cond?: Cond;
 }
+export interface TriggerDef {
+  x: number; y: number;
+  /** fires while this holds */
+  cond?: Cond;
+  dialogue: string;
+  /** walk the player one tile this way afterwards (blocks progress until a condition is met) */
+  push?: Dir;
+  /** run once: set this flag when the dialogue ends */
+  once?: string;
+}
+export interface PickupDef { x: number; y: number; item: string; qty?: number; flag: string; text?: string }
 export interface SignDef { x: number; y: number; lines?: string[]; dialogue?: string }
 export interface MapDef {
   id: string; name: string; w: number; h: number;
@@ -17,6 +30,14 @@ export interface MapDef {
   deco: (string | null)[][];
   warps: WarpDef[]; npcs: NpcDef[]; signs: SignDef[];
   indoor: boolean;
+  /** battle backdrop / encounter flavour override */
+  terrain?: 'grass' | 'forest' | 'cave' | 'gym';
+  /** step-on story triggers */
+  triggers: TriggerDef[];
+  /** pick-up-able items lying around (flag makes each one single-use) */
+  pickups: PickupDef[];
+  /** dialogue that plays automatically on arrival (date scenes) */
+  autorun?: string;
   spawn?: { x: number; y: number; dir: Dir };
 }
 
@@ -28,6 +49,8 @@ export type Cond =
   | { affection: string; gte?: number; lt?: number }
   | { day: 'even' | 'odd' }
   | { brushed: string }
+  | { has: string }
+  | { dexCaught: number }
   | { all: Cond[] }
   | { any: Cond[] }
   | { not: Cond };
