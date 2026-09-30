@@ -206,8 +206,10 @@ try {
   if (!(await flag('quest.rival2'))) fail('rival 2 never happened on the way');
 
   // ============================================================ 6. cave + gym 2
+  await hunt('setLevel', 0, 55);
   await goto('hollowdeep', 22, 0, 'through the cave');
   await expectMap('hollow_hall', 'hall');
+  await hunt('setLevel', 0, 55); // full heal (the bot never visits a healer)
   await goto('hollow_hall', 11, 4, 'walk to Orrin (gym trainers)');
   await press('ArrowUp', 160); await press('z', 300);
   await dialogueUntil(() => flag('badge.tidal'), 'Orrin', ["Let's battle!"]);
