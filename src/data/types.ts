@@ -7,6 +7,8 @@ export interface NpcDef {
   radius?: number;
   lines?: string[];
   dialogue?: string;
+  /** Trainer id (data/trainers.ts). Sees the player along `sight` tiles in facing direction. */
+  trainer?: { id: string; sight: number };
 }
 export interface SignDef { x: number; y: number; lines?: string[]; dialogue?: string }
 export interface MapDef {
@@ -35,6 +37,7 @@ export type Effect =
   | { var: string; set?: number; add?: number }
   | { affection: string; delta: number; tag?: string }
   | { give: string; qty?: number }
+  | { creature: string; level: number }
   | { cmd: string; arg?: string };
 
 export type Expression = 'neutral' | 'happy' | 'blush' | 'annoyed' | 'surprised' | 'smug';
@@ -79,4 +82,62 @@ export interface DialogueGraph {
   react?: Partial<Record<FlirtReaction, string>>;
   /** milestone threshold -> node id played from the next hub. */
   milestones?: Partial<Record<25 | 50 | 75 | 100, string>>;
+}
+
+// ---------- battle / creatures ----------
+export type MonType = 'normal' | 'flame' | 'tide' | 'leaf' | 'volt' | 'frost' | 'stone' | 'gale' | 'venom' | 'mind' | 'shade' | 'fist';
+export type Stat = 'hp' | 'atk' | 'def' | 'spa' | 'spd' | 'spe';
+export type BattleStat = Exclude<Stat, 'hp'> | 'acc' | 'eva';
+export type Status = 'burn' | 'poison' | 'sleep' | 'paralysis';
+export type Stats = Record<Stat, number>;
+
+export interface MoveEffect {
+  /** inflict status on the target */
+  status?: { kind: Status; chance: number };
+  /** stat stage change; who = 'self' | 'foe' */
+  stages?: Array<{ stat: BattleStat; delta: number; who: 'self' | 'foe'; chance?: number }>;
+  /** heal user by fraction of max HP */
+  heal?: number;
+  /** restore fraction of damage dealt to user */
+  drain?: number;
+  /** damage to user as fraction of damage dealt */
+  recoil?: number;
+  /** multi-hit range */
+  hits?: [number, number];
+}
+export interface MoveDef {
+  id: string; name: string; type: MonType; cat: 'phys' | 'spec' | 'status';
+  power: number;
+  /** null = never misses */
+  acc: number | null;
+  pp: number; priority?: number; highCrit?: boolean;
+  effect?: MoveEffect;
+  desc: string;
+}
+export interface CreatureArt {
+  plan: 'blob' | 'quad' | 'biped' | 'bird' | 'serpent' | 'insect' | 'floater';
+  /** main, shade, light, accent, belly */
+  pal: [string, string, string, string, string];
+  size: number;
+  feats: string[];
+  eye?: string;
+}
+export interface SpeciesDef {
+  id: string; name: string; dex: number; types: [MonType] | [MonType, MonType];
+  base: Stats;
+  catchRate: number;
+  curve: 'fast' | 'medium' | 'slow';
+  baseXp: number;
+  learnset: Array<[number, string]>;
+  evolve?: { level: number; to: string };
+  art: CreatureArt;
+  dexText: string;
+}
+export interface ItemDef {
+  id: string; name: string; desc: string; price: number;
+  kind: 'heal' | 'status' | 'revive' | 'ball' | 'key' | 'gift' | 'evo';
+  heal?: number | 'full';
+  cures?: Status[] | 'all';
+  ballBonus?: number;
+  tags?: string[];
 }

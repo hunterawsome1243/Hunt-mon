@@ -20,7 +20,7 @@ function mockUI(picks: Array<number | string>) {
       return i;
     },
     affectionFx() {}, milestone(_n, m) { log.push(`milestone:${m}`); },
-    async command(n) { log.push(`cmd:${n}`); }, give(i) { log.push(`give:${i}`); },
+    async command(n) { log.push(`cmd:${n}`); }, give(i) { log.push(`give:${i}`); }, giveCreature(sp) { log.push(`creature:${sp}`); },
   };
   return { ui, log };
 }

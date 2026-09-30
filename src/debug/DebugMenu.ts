@@ -3,6 +3,9 @@ import { MAPS } from '../data/maps';
 import { ROMANCE } from '../data/romance/profiles';
 import { changeAffection } from '../game/romance/Affection';
 import { state } from '../game/state/GameState';
+import { SPECIES_LIST } from '../data/creatures';
+import { ITEMS } from '../data/items';
+import { createCreature, healFully } from '../game/battle/Creature';
 
 /** DOM overlay toggled with backtick. Extended each milestone (items, levels, affection...). */
 export class DebugMenu {
@@ -49,6 +52,19 @@ export class DebugMenu {
       this.el.appendChild(row);
       for (const v of [0, 25, 50, 75, 100]) btn(String(v), () => { changeAffection(state, p.id, v - state.affection(p.id)); state.rec(p.id).pending = []; });
     }
+    sec('Creatures:');
+    const sel = document.createElement('select');
+    for (const sp of SPECIES_LIST) { const o = document.createElement('option'); o.value = sp.id; o.textContent = `${sp.dex}. ${sp.name}`; sel.appendChild(o); }
+    const lv = document.createElement('input'); lv.type = 'number'; lv.value = '5'; lv.min = '1'; lv.max = '100'; lv.style.width = '48px';
+    this.el.append(sel, ' Lv ', lv, document.createElement('br'));
+    const ow = () => this.game.scene.getScene('overworld') as Phaser.Scene & { startBattle?: (i: unknown) => void };
+    btn('Give', () => { state.addCreature(createCreature(sel.value, Number(lv.value))); });
+    btn('Wild battle', () => { this.toggle(); ow().startBattle?.({ foeParty: [createCreature(sel.value, Number(lv.value))], terrain: 'grass' }); });
+    btn('Heal party', () => { state.party.forEach(healFully); });
+    btn('Set party Lv', () => { state.party.forEach((c) => { c.level = Number(lv.value); healFully(c); }); });
+    sec(`Items (money $${state.money}):`);
+    btn('+$1000', () => { state.money += 1000; });
+    for (const id of ['potion', 'super_potion', 'revive', 'catch_orb', 'great_orb', 'full_heal']) btn(`+5 ${ITEMS[id].name}`, () => state.addItem(id, 5));
     sec('Flags:');
     btn('mira.intro', () => state.setFlag('mira.intro'));
   }

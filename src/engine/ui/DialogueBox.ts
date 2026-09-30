@@ -16,8 +16,7 @@ export function drawWindow(g: Phaser.GameObjects.Graphics, x: number, y: number,
 
 export const textStyle = (color = '#2a1d2e'): Phaser.Types.GameObjects.Text.TextStyle => ({ fontFamily: FONT, fontSize: '8px', color, lineSpacing: 4 });
 
-const BOX = { x: 4, y: VIEW_H - 46, w: VIEW_W - 8, h: 42 };
-const COLS = 26;
+const BOX: { x: number; y: number; w: number; h: number } = { x: 4, y: VIEW_H - 46, w: VIEW_W - 8, h: 42 };
 const CHOICE_COLS = 21;
 const CHOICE_W = 190;
 const ROW_LINE = 9;
@@ -44,6 +43,11 @@ export class DialogueBox {
   private cursor!: Phaser.GameObjects.Graphics;
   private cursorTween?: Phaser.Tweens.Tween;
 
+  private w = BOX.w;
+  private cols = 26;
+  private holdMs = 0;
+  private holdLeft = 0;
+  private autoMode = false;
   private full = '';
   private shown = 0;
   private acc = 0;
@@ -159,16 +163,43 @@ export class DialogueBox {
 
   // ---------- public API ----------
   say(o: SayOpts): Promise<void> {
-    this.begin(o, paginate(o.text, COLS));
+    this.autoMode = false;
+    this.begin(o, paginate(o.text, this.cols));
     this.wantChoices = null;
     return new Promise((res) => { this.resolve = res; });
   }
 
   choose(o: ChooseOpts): Promise<number> {
-    this.begin(o, o.text ? paginate(o.text, COLS) : ['']);
+    this.autoMode = false;
+    this.begin(o, o.text ? paginate(o.text, this.cols) : ['']);
     this.wantChoices = o.options;
     this.sel = 0;
     return new Promise((res) => { this.chooseResolve = res; });
+  }
+
+  /** Redraw the window at a new width (battle shrinks it to make room for the command menu). */
+  layout(w: number): void {
+    this.w = w;
+    this.box.clear(); drawWindow(this.box, BOX.x, BOX.y, w, BOX.h);
+    this.cols = Math.floor((w - 16) / 8);
+    this.arrow.x = BOX.x + w - 14;
+    if (this.full && this.shown >= this.full.length) this.txt.setText(this.full);
+  }
+  get width(): number { return this.w; }
+
+  /** Battle-style message: types out, holds briefly, then resolves on its own (confirm skips). Box stays open. */
+  message(text: string, holdMs = 650): Promise<void> {
+    this.autoMode = true; this.holdMs = holdMs; this.holdLeft = -1;
+    this.wantChoices = null;
+    this.begin({ text }, paginate(text, this.cols));
+    return new Promise((res) => { this.resolve = res; });
+  }
+  hide(): void { this.active = false; this.setOpen(false); }
+  /** Show the (empty or fixed) box without waiting for input. */
+  showText(text: string): void {
+    this.autoMode = false; this.wantChoices = null; this.pages = [text]; this.page = 0; this.setOpen(true);
+    this.tag.setVisible(false); this.portraitWin.setVisible(false);
+    this.full = text; this.shown = text.length; this.txt.setText(text); this.arrow.setVisible(false); this.active = false;
   }
 
   private begin(o: SayOpts | ChooseOpts, pages: string[]): void {
@@ -187,6 +218,7 @@ export class DialogueBox {
   }
   private finishTyping(): void {
     this.shown = this.full.length; this.txt.setText(this.full);
+    if (this.autoMode) { this.holdLeft = this.holdMs; this.arrow.setVisible(false); return; }
     const last = this.page >= this.pages.length - 1;
     if (last && this.wantChoices) this.showMenu(this.wantChoices);
     else this.arrow.setVisible(true);
@@ -197,6 +229,12 @@ export class DialogueBox {
 
   handleInput(im: InputManager): void {
     if (!this.active) return;
+    if (this.autoMode) {
+      if (im.just('confirm') || im.just('back')) {
+        if (this.shown < this.full.length) this.finishTyping(); else this.holdLeft = 0;
+      }
+      return;
+    }
     if (this.menu) {
       const n = this.wantChoices!.length;
       if (im.just('up')) this.moveSel((this.sel + n - 1) % n);
@@ -216,6 +254,15 @@ export class DialogueBox {
   }
 
   update(dtMs: number): void {
+    if (this.autoMode && this.active && this.shown >= this.full.length && this.holdLeft >= 0) {
+      this.holdLeft -= dtMs;
+      if (this.holdLeft <= 0) {
+        this.holdLeft = -1;
+        if (this.page < this.pages.length - 1) { this.page++; this.startPage(); }
+        else { this.active = false; const r = this.resolve; this.resolve = null; r?.(); } // box stays visible
+      }
+      return;
+    }
     if (!this.active || this.shown >= this.full.length) return;
     this.acc += dtMs / 1000 * this.charsPerSec;
     const n = Math.floor(this.acc);

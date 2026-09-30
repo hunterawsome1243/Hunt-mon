@@ -11,10 +11,18 @@ import { SceneDialogueUI } from '../engine/script/SceneDialogueUI';
 import { nextDay } from '../game/romance/Affection';
 import { state } from '../game/state/GameState';
 import { rng } from '../engine/rng';
+import { ENCOUNTERS } from '../data/encounters';
+import { TRAINERS } from '../data/trainers';
+import { createCreature, maxHp, movesAt, xpForLevel } from '../game/battle/Creature';
+import { SPECIES } from '../data/creatures';
+import { MOVES } from '../data/moves';
+import { shutterClose, shutterRetract } from '../engine/fx/Transitions';
+import { sfx } from '../engine/audio/Sfx';
+import type { BattleInit, BattleOutcome } from './BattleScene';
 
 interface AnimTile { sprite: Phaser.GameObjects.Image; key: string; frames: number; ms: number }
 interface NpcRt { def: NpcDef; actor: Actor; homeX: number; homeY: number; timer: number }
-interface SceneData { map?: string; x?: number; y?: number; dir?: Dir }
+interface SceneData { map?: string; x?: number; y?: number; dir?: Dir; msg?: string[] }
 
 export class OverworldScene extends Phaser.Scene {
   private input2!: InputManager;
@@ -34,6 +42,8 @@ export class OverworldScene extends Phaser.Scene {
   private grassOverlay!: Phaser.GameObjects.Image;
   private mapLabel!: Phaser.GameObjects.Text;
   private tileClock = 0;
+  private bars: Phaser.GameObjects.Rectangle[] = [];
+  private stepsSince = 0;
   private seed: SceneData = {};
 
   constructor() { super('overworld'); }
@@ -74,12 +84,27 @@ export class OverworldScene extends Phaser.Scene {
     this.centerCamera(true);
     this.cameras.main.fadeIn(280, 0, 0, 0);
     (window as unknown as { __hunt?: unknown }).__hunt = this.debugApi();
+    if (this.seed.msg) {
+      this.locked = true;
+      this.time.delayedCall(450, () => { void this.dialogue.say({ text: this.seed.msg!.join(' ') }).then(() => { this.locked = false; }); });
+    }
   }
 
   private debugApi() {
     return {
       state: () => ({ day: state.day, aff: { ...Object.fromEntries(Object.entries(state.romance).map(([k, v]) => [k, v.affection])) }, map: this.map.id, x: this.player.tx, y: this.player.ty, dir: this.player.dir, moving: this.player.moving, locked: this.locked, dialogue: this.dialogue.active, menu: this.dialogue.hasMenu }),
       maps: Object.keys(MAPS),
+      giveStarter: (id: string, lv = 5) => { if (!state.party.length) state.giveStarter(id, lv); },
+      wild: (sp: string, lv: number) => this.startBattle({ foeParty: [createCreature(sp, lv)], terrain: this.terrain() }),
+      trainerBattle: (id: string) => { const d = TRAINERS[id]; return this.startBattle({ foeParty: d.party.map((p) => createCreature(p.species, p.level)), trainer: d, terrain: this.terrain() }); },
+      party: () => state.party.map((c) => ({ sp: c.species, lv: c.level, hp: c.hp, xp: c.xp, moves: c.moves.map((m) => m.id) })),
+      box: () => state.box.length,
+      addMon: (sp: string, lv: number) => { state.addCreature(createCreature(sp, lv)); },
+      setLevel: (i: number, lv: number) => { const c = state.party[i]; c.level = lv; c.xp = xpForLevel(SPECIES[c.species].curve, lv); c.moves = movesAt(c.species, lv).map((id) => ({ id, pp: MOVES[id].pp, maxPp: MOVES[id].pp })); c.hp = maxHp(c); },
+      nearLevelUp: (i: number) => { const c = state.party[i]; c.xp = xpForLevel(SPECIES[c.species].curve, c.level + 1) - 1; },
+      hpAll: (hp: number) => { state.party.forEach((c) => { c.hp = Math.min(c.hp, hp); }); },
+      money: () => state.money,
+      flag: (k: string) => state.flag(k),
     };
   }
 
@@ -133,18 +158,103 @@ export class OverworldScene extends Phaser.Scene {
     return all.some((a) => a !== self && ((a.tx === x && a.ty === y) || (a.moving && a.destX === x && a.destY === y)));
   }
 
-  warpTo(mapId: string, x: number, y: number, dir: Dir = 'down'): void {
+  warpTo(mapId: string, x: number, y: number, dir: Dir = 'down', msg?: string[]): void {
     if (this.locked && this.cameras.main.fadeEffect.isRunning) return;
     this.locked = true;
     this.cameras.main.fadeOut(220, 0, 0, 0);
-    this.cameras.main.once('camerafadeoutcomplete', () => this.scene.restart({ map: mapId, x, y, dir }));
+    this.cameras.main.once('camerafadeoutcomplete', () => this.scene.restart({ map: mapId, x, y, dir, msg }));
   }
 
   private onPlayerArrive(a: Actor): void {
     this.chain = true;
     const w = this.map.warps.find((wp) => wp.x === a.tx && wp.y === a.ty);
     if (w) { this.warpTo(w.to, w.tx, w.ty, w.dir); return; }
-    if (this.grass[a.ty][a.tx]) this.rustle(a.tx, a.ty);
+    state.steps++;
+    if (this.grass[a.ty][a.tx]) { this.rustle(a.tx, a.ty); this.maybeEncounter(); }
+  }
+
+  // ---------- battles ----------
+  private terrain(): BattleInit['terrain'] { return ENCOUNTERS[this.map.id]?.terrain ?? (this.map.indoor ? 'gym' : 'grass'); }
+
+  private maybeEncounter(): void {
+    const table = ENCOUNTERS[this.map.id];
+    if (!table || this.locked || !state.party.some((c) => c.hp > 0)) return;
+    this.stepsSince++;
+    if (this.stepsSince < 3 || !rng.chance(table.rate)) return;
+    const total = table.entries.reduce((a, e) => a + e.weight, 0);
+    let r = rng.next() * total;
+    const entry = table.entries.find((e) => (r -= e.weight) < 0) ?? table.entries[0];
+    void this.startBattle({ foeParty: [createCreature(entry.species, rng.int(entry.min, entry.max))], terrain: table.terrain });
+  }
+
+  private until(cond: () => boolean): Promise<void> {
+    return new Promise((res) => {
+      const t = this.time.addEvent({ delay: 16, loop: true, callback: () => { if (cond()) { t.remove(); res(); } } });
+    });
+  }
+
+  /** Cinematic intro (flashes + shutter wipe), then hands over to the battle scene. */
+  async startBattle(init: BattleInit): Promise<void> {
+    this.locked = true;
+    sfx('battle_start');
+    const cam = this.cameras.main;
+    for (let i = 0; i < 2; i++) { cam.flash(140, 255, 255, 255); await new Promise((r) => this.time.delayedCall(230, () => r(null))); }
+    this.bars = await shutterClose(this, 560);
+    this.events.once('wake', (_sys: unknown, data: BattleOutcome) => { void this.onBattleEnd(data); });
+    this.scene.sleep();
+    this.scene.launch('battle', init);
+  }
+
+  private async onBattleEnd(o: BattleOutcome): Promise<void> {
+    this.stepsSince = 0;
+    this.player.moving = false;
+    await shutterRetract(this, this.bars, 480);
+    this.bars = [];
+    if (o.result === 'lose') {
+      state.healParty();
+      state.money = Math.floor(state.money / 2);
+      const h = state.home;
+      this.warpTo(h.map, h.x, h.y, 'down', ['You scurry back home and rest up...', 'Your creatures are fully healed.']);
+      return;
+    }
+    if (o.trainerId) {
+      state.setFlag('trainer.' + o.trainerId);
+      const def = TRAINERS[o.trainerId];
+      if (def) await this.dialogue.say({ speaker: def.name, text: def.post.join(' ') });
+    }
+    this.locked = false;
+  }
+
+  private checkTrainers(): void {
+    if (this.locked || this.dialogue.active || this.player.moving || !state.party.some((c) => c.hp > 0)) return;
+    for (const n of this.npcs) {
+      const t = n.def.trainer;
+      if (!t || state.flag('trainer.' + t.id) || n.actor.moving) continue;
+      const dv = DIRS[n.actor.dir];
+      for (let i = 1; i <= t.sight; i++) {
+        const x = n.actor.tx + dv.x * i, y = n.actor.ty + dv.y * i;
+        if (x < 0 || y < 0 || x >= this.map.w || y >= this.map.h || this.solid[y][x]) break;
+        if (this.player.tx === x && this.player.ty === y) { void this.trainerEncounter(n, i); return; }
+        if (this.npcs.some((o) => o !== n && o.actor.tx === x && o.actor.ty === y)) break;
+      }
+    }
+  }
+
+  private async trainerEncounter(n: NpcRt, dist: number): Promise<void> {
+    const def = TRAINERS[n.def.trainer!.id];
+    this.locked = true;
+    if (dist > 1) {
+      const e = this.add.image(n.actor.px, n.actor.py - 26, 'ui_emote', 2).setDepth(DEPTH.fx).setScale(0.3);
+      sfx('alert');
+      this.tweens.add({ targets: e, scale: 1, y: e.y - 4, duration: 220, ease: 'Back.easeOut' });
+      await new Promise((r) => this.time.delayedCall(700, () => r(null)));
+      e.destroy();
+      for (let i = 0; i < dist - 1; i++) { n.actor.step(n.actor.dir, false); await this.until(() => !n.actor.moving); }
+    }
+    const opp: Record<Dir, Dir> = { up: 'down', down: 'up', left: 'right', right: 'left' };
+    this.player.face(opp[n.actor.dir]);
+    await this.dialogue.say({ speaker: def.name, text: def.pre.join(' ') });
+    await this.startBattle({ foeParty: def.party.map((p) => createCreature(p.species, p.level)), trainer: def, terrain: this.terrain() });
   }
 
   private rustle(tx: number, ty: number): void {
@@ -170,7 +280,13 @@ export class OverworldScene extends Phaser.Scene {
       npc.actor.face(opp[this.player.dir]);
     }
     try {
-      if (target.dialogue) await this.runner.run(target.dialogue);
+      const tr = npc?.def.trainer;
+      if (tr && TRAINERS[tr.id]) {
+        const def = TRAINERS[tr.id];
+        if (state.flag('trainer.' + tr.id)) await this.dialogue.say({ speaker: def.name, text: def.post.join(' ') });
+        else if (state.party.some((c) => c.hp > 0)) { await this.trainerEncounter(npc!, 1); return; }
+        else await this.dialogue.say({ speaker: def.name, text: 'Come back when you have a partner!' });
+      } else if (target.dialogue) await this.runner.run(target.dialogue);
       else if (target.lines) await this.dialogue.say({ text: target.lines.join(' ') });
     } finally { this.locked = false; }
   }
@@ -200,6 +316,7 @@ export class OverworldScene extends Phaser.Scene {
     this.player.update(dt);
     this.updateNpcs(dt);
     this.updateGrassOverlay();
+    this.checkTrainers();
     this.centerCamera(false, dt);
   }
 

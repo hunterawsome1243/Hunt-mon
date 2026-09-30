@@ -81,6 +81,106 @@ try {
     if (s.map !== m) fail(`warp to ${m} gave ${s.map}`);
     await page.screenshot({ path: `shots/map_${m}.png` });
   }
+  // ---------------- battles ----------------
+  const hunt = (fn, ...a) => page.evaluate(([f, args]) => window.__hunt[f](...args), [fn, a]);
+  const battleActive = () => page.evaluate(() => window.__game.scene.isActive('battle'));
+  const waitBattle = async (ms = 8000) => { for (let i = 0; i < ms / 100 && !(await battleActive()); i++) await sleep(100); };
+  await page.evaluate(() => window.__game.scene.getScene('overworld').warpTo('route1', 8, 20, 'up'));
+  await sleep(900);
+  await hunt('giveStarter', 'cinderpup', 5);
+  if ((await hunt('party')).length !== 1) fail('starter not given');
+  const phase = () => page.evaluate(() => window.__battle?.phase);
+  const waitPhase = async (ph, ms = 15000) => { for (let i = 0; i < ms / 100 && (await phase()) !== ph; i++) await sleep(100); return (await phase()) === ph; };
+  const finishBattle = async (maxIter = 800) => {
+    for (let i = 0; i < maxIter && (await battleActive()); i++) { await page.keyboard.press('z'); await sleep(120); }
+    return !(await battleActive());
+  };
+  // wild fight: spam confirm (Fight -> first move) until the battle ends
+  await hunt('wild', 'nibbit', 2);
+  await waitBattle();
+  if (!(await battleActive())) fail('battle scene never started');
+  await sleep(2600); await page.screenshot({ path: 'shots/10_battle_intro.png' });
+  if (!(await waitPhase('command'))) fail('never reached command menu');
+  await page.screenshot({ path: 'shots/11_battle_menu.png' });
+  await page.keyboard.press('z'); await sleep(500); await page.screenshot({ path: 'shots/11b_moves.png' });
+  if (!(await finishBattle())) fail('wild battle did not finish');
+  await sleep(1200);
+  console.log('after wild battle:', JSON.stringify((await hunt('party'))[0]));
+  if (!(await st()).map) fail('overworld dead after battle');
+  // capture: weaken foe, throw an orb via Bag
+  const before = (await hunt('party')).length + (await hunt('box'));
+  let caught = false;
+  for (let attempt = 0; attempt < 6 && !caught; attempt++) {
+    await hunt('wild', 'wrenlet', 3);
+    await waitBattle();
+    if (!(await waitPhase('command'))) { fail('no command phase for capture test'); break; }
+    await page.evaluate(() => { const b = window.__battle.battle; b.f.hp = 1; b.f.status = 'sleep'; b.f.sleep = 5; });
+    await page.keyboard.press('ArrowRight'); await sleep(150);
+    await page.keyboard.press('z'); await sleep(600); // Bag
+    await page.keyboard.press('ArrowDown'); await sleep(150);
+    await page.keyboard.press('z'); await sleep(3200); // catch_orb
+    if (attempt === 0) await page.screenshot({ path: 'shots/12_catch.png' });
+    await finishBattle();
+    await sleep(1000);
+    caught = (await hunt('party')).length + (await hunt('box')) > before;
+  }
+  if (!caught) fail('could not capture a sleeping 1hp creature in 6 tries');
+  await hunt('setLevel', 0, 10); // keep the trainer fight winnable so the test is deterministic
+  // trainer battle with line of sight
+  await page.evaluate(() => window.__game.scene.getScene('overworld').warpTo('route1', 9, 20, 'up'));
+  await sleep(1000);
+  await page.keyboard.down('ArrowUp'); await sleep(1900); await page.keyboard.up('ArrowUp');
+  for (let i = 0; i < 40 && !(await battleActive()); i++) { await page.keyboard.press('z'); await sleep(350); } // dismiss the challenge dialogue
+  if (!(await battleActive())) fail('trainer did not challenge the player');
+  else {
+    await sleep(2500); await page.screenshot({ path: 'shots/13_trainer.png' });
+    if (!(await finishBattle(1500))) fail('trainer battle did not finish');
+    await sleep(2500);
+    console.log('after trainer:', JSON.stringify(await hunt('party')), 'money', await hunt('money'), 'defeated', await hunt('flag', 'trainer.timo'));
+  }
+  // ---------------- scenario: level-up -> evolution -> learn prompt ----------------
+  await page.evaluate(() => window.__game.scene.getScene('overworld').warpTo('route1', 8, 22, 'up'));
+  await sleep(1000);
+  await hunt('setLevel', 0, 15);
+  await hunt('nearLevelUp', 0);
+  await hunt('wild', 'nibbit', 2);
+  await waitBattle();
+  if (!(await waitPhase('command'))) fail('no command phase (evolution scenario)');
+  await page.evaluate(() => { const b = window.__battle.battle; b.f.hp = 1; });
+  await page.keyboard.press('z'); await sleep(300);
+  await page.keyboard.press('z'); // first move
+  let sawEvo = false;
+  for (let i = 0; i < 400 && (await battleActive()); i++) {
+    await sleep(150);
+    await page.keyboard.press('z');
+    if (i === 40) await page.screenshot({ path: 'shots/14_levelup.png' });
+    const sp = (await hunt('party'))[0].sp;
+    if (sp === 'emberhound') sawEvo = true;
+  }
+  const pp = (await hunt('party'))[0];
+  console.log('after evolution scenario:', JSON.stringify(pp));
+  if (!sawEvo || pp.sp !== 'emberhound') fail('creature did not evolve');
+  if (!pp.moves.includes('flame_wheel')) fail('evolved creature did not learn flame_wheel: ' + pp.moves);
+  await sleep(1200);
+  // ---------------- scenario: faint -> forced switch -> blackout ----------------
+  await hunt('addMon', 'nibbit', 4);
+  await hunt('wild', 'skyrill', 45);
+  await waitBattle();
+  if (!(await waitPhase('command'))) fail('no command phase (faint scenario)');
+  let switched = false;
+  for (let i = 0; i < 600 && (await battleActive()); i++) {
+    const ph = await phase();
+    if (ph === 'command') { await page.keyboard.press('z'); await sleep(250); await page.keyboard.press('z'); await sleep(200); }
+    else await page.keyboard.press('z');
+    await sleep(160);
+    if (!switched && (await page.evaluate(() => window.__battle?.battle?.party.filter((c) => c.hp <= 0).length)) === 1) switched = true;
+  }
+  await sleep(2500);
+  const afterLose = await st();
+  console.log('after blackout:', JSON.stringify(afterLose), 'party', JSON.stringify(await hunt('party')));
+  if (!switched) fail('never saw a single faint followed by a forced switch');
+  if (afterLose.map !== 'house_player') fail('blackout did not send the player home');
+  if ((await hunt('party')).some((c) => c.hp <= 0)) fail('party not healed after blackout');
   await browser.close();
   if (logs.length) { fail('console output:\n' + [...new Set(logs)].join('\n')); }
 } catch (e) { fail(String(e)); }

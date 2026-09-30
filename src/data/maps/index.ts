@@ -72,6 +72,7 @@ function route1(): MapDef {
   b.fill(8, 7, 2, 4, 'path');
     b.warp(8, 25, 'emberwick', 15, 1, 'down'); b.warp(9, 25, 'emberwick', 16, 1, 'down');
   b.sign(7, 22, ['ROUTE 1', 'More to come...']);
+  b.npc({ id: 'timo', x: 11, y: 17, look: 'kid', dir: 'left', move: 'idle', trainer: { id: 'timo', sight: 3 } });
   b.npc({ id: 'hiker', x: 12, y: 18, look: 'villager_m', dir: 'left', move: 'wander', radius: 2, lines: ['This route is only a', 'sample for now.', 'Great things ahead!'] });
   return b.build();
 }

@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { DEPTH, TILE, VIEW_W } from '../../config';
 import { SPEAKER_LOOK } from '../../data/dialogue';
+import { SPECIES } from '../../data/creatures';
 import { ROMANCE } from '../../data/romance/profiles';
 import type { Expression, FlirtReaction } from '../../data/types';
 import type { AffectionChange } from '../../game/romance/Affection';
@@ -70,6 +71,10 @@ export class SceneDialogueUI implements DialogueUI {
   give(item: string, qty: number): void {
     state.vars[`item.${item}`] = state.varOf(`item.${item}`) + qty;
     this.toast(`Received ${item.replace(/_/g, ' ')}${qty > 1 ? ' x' + qty : ''}!`);
+  }
+  giveCreature(species: string, level: number): void {
+    const c = state.giveStarter(species, level);
+    this.toast(`${SPECIES[c.species].name} joined your party!`);
   }
   command(name: string, arg?: string): Promise<void> { return this.hooks.command(name, arg); }
 

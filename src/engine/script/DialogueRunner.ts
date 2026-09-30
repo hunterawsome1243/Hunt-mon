@@ -14,6 +14,7 @@ export interface DialogueUI {
   milestone(npc: string, m: number): void;
   command(name: string, arg?: string): Promise<void>;
   give(item: string, qty: number): void;
+  giveCreature(species: string, level: number): void;
 }
 
 const MAX_STEPS = 500; // guard against authoring loops with no player input
@@ -27,6 +28,7 @@ export class DialogueRunner {
     if (applyBasicEffect(e, this.s)) return;
     if ('affection' in e) { const ch = changeAffection(this.s, e.affection, e.delta); this.ui.affectionFx(e.affection, ch); this.announce(e.affection, ch); }
     else if ('give' in e) this.ui.give(e.give, e.qty ?? 1);
+    else if ('creature' in e) this.ui.giveCreature(e.creature, e.level);
     else if ('cmd' in e) await this.ui.command(e.cmd, e.arg);
     void g;
   }

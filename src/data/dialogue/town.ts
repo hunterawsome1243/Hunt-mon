@@ -3,7 +3,16 @@ import type { DialogueGraph } from '../types';
 export const ELDER: DialogueGraph = {
   id: 'elder', start: 'entry',
   nodes: {
-    entry: { branch: [{ cond: { flag: 'elder.met' }, next: 'again' }], next: 'first' },
+    entry: { branch: [{ cond: { notFlag: 'starter.chosen' }, next: 'starter' }, { cond: { flag: 'elder.met' }, next: 'again' }], next: 'first' },
+    starter: {
+      speaker: 'Elder', portrait: 'happy', text: 'Ah, {player}! You cannot cross the tall grass alone. Choose a partner from my three young friends.',
+      choices: [
+        { text: 'Cinderpup (Flame)', next: 'pick_c' }, { text: 'Drippet (Tide)', next: 'pick_d' }, { text: 'Sproutle (Leaf)', next: 'pick_s' },
+      ],
+    },
+    pick_c: { speaker: 'Elder', portrait: 'happy', text: 'Cinderpup! Warm-hearted and brave. Take good care of it.', effects: [{ creature: 'cinderpup', level: 5 }, { flag: 'starter.chosen' }, { flag: 'starter.cinderpup' }, { flag: 'elder.met' }], end: true },
+    pick_d: { speaker: 'Elder', portrait: 'happy', text: 'Drippet! Calm and clever. A fine choice.', effects: [{ creature: 'drippet', level: 5 }, { flag: 'starter.chosen' }, { flag: 'starter.drippet' }, { flag: 'elder.met' }], end: true },
+    pick_s: { speaker: 'Elder', portrait: 'happy', text: 'Sproutle! Patient and hardy. It will grow with you.', effects: [{ creature: 'sproutle', level: 5 }, { flag: 'starter.chosen' }, { flag: 'starter.sproutle' }, { flag: 'elder.met' }], end: true },
     first: {
       speaker: 'Elder', portrait: 'neutral', text: 'Ah, a new traveller. The world is wide, {player}. Walk with care, and run only with purpose.',
       effects: [{ flag: 'elder.met' }], next: 'menu',
