@@ -12,6 +12,7 @@ export class MapBuilder {
   pickups: PickupDef[] = [];
   terrain?: MapDef['terrain'];
   autorun?: string;
+  time?: number;
   spawn?: { x: number; y: number; dir: Dir };
   constructor(public id: string, public name: string, public w: number, public h: number, base: string, public indoor = false) {
     this.ground = Array.from({ length: h }, () => Array<string>(w).fill(base));
@@ -115,7 +116,7 @@ export class MapBuilder {
   trigger(t: TriggerDef): this { this.triggers.push(t); return this; }
   pickup(p: PickupDef): this { this.pickups.push(p); this.d(p.x, p.y, 'sparkle'); return this; }
   build(): MapDef {
-    return { id: this.id, name: this.name, w: this.w, h: this.h, ground: this.ground, deco: this.deco, warps: this.warps, npcs: this.npcs, signs: this.signs, indoor: this.indoor, terrain: this.terrain, triggers: this.triggers, pickups: this.pickups, autorun: this.autorun, spawn: this.spawn };
+    return { id: this.id, name: this.name, w: this.w, h: this.h, ground: this.ground, deco: this.deco, warps: this.warps, npcs: this.npcs, signs: this.signs, indoor: this.indoor, terrain: this.terrain, triggers: this.triggers, pickups: this.pickups, autorun: this.autorun, time: this.time, spawn: this.spawn };
   }
 }
 

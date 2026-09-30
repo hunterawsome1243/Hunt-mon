@@ -1,4 +1,5 @@
 import { backdrop, COL, text, win } from '../../engine/ui/kit';
+import { syncAudio } from '../../engine/audio';
 import { state } from '../../game/state/GameState';
 import type { MenuScene } from '../MenuScene';
 
@@ -41,8 +42,8 @@ export function optionsScreen(m: MenuScene): Promise<void> {
         if (im.just('back')) { m.handler = null; res(); return; }
         if (im.just('up')) { sel = (sel + rows.length - 1) % rows.length; render(); }
         else if (im.just('down')) { sel = (sel + 1) % rows.length; render(); }
-        else if (im.just('left')) { rows[sel].step(-1); render(); }
-        else if (im.just('right') || im.just('confirm')) { rows[sel].step(1); render(); }
+        else if (im.just('left')) { rows[sel].step(-1); syncAudio(); render(); }
+        else if (im.just('right') || im.just('confirm')) { rows[sel].step(1); syncAudio(); render(); }
       };
     });
   }, 'options');

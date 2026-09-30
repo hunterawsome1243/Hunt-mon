@@ -19,6 +19,8 @@ import { Action, Battle, BattleEvent, BattleResult, Side } from '../game/battle/
 import { canEvolve, Creature, evolve, learnableAt, learnMove, maxHp, nameOf, spec, xpForLevel } from '../game/battle/Creature';
 import { state } from '../game/state/GameState';
 import { rng } from '../engine/rng';
+import { playMusic } from '../engine/audio';
+import { ambientAt, gameMinutes } from '../game/systems/Clock';
 import { wrap } from '../engine/ui/wrap';
 
 export interface BattleInit {
@@ -67,6 +69,14 @@ export class BattleScene extends Phaser.Scene {
     this.cameras.main.setBackgroundColor('#000000');
     this.add.image(0, 0, `bg_${this.init0.terrain}`).setOrigin(0, 0).setDepth(0);
     this.makeAmbient();
+    const leader = ['rhea', 'rhea_rematch', 'orrin', 'rival3'].includes(this.init0.trainer?.id ?? '');
+    playMusic(leader ? 'battle_leader' : this.init0.trainer ? 'battle_trainer' : 'battle_wild', 200);
+    if (this.init0.terrain === 'grass' || this.init0.terrain === 'forest') {
+      // the sky follows the real time of day
+      const a = ambientAt(gameMinutes(state.clockBase, state.playMs) / 60);
+      if (a.grade !== 0xffffff) this.add.rectangle(0, 0, VIEW_W, 128, a.grade).setOrigin(0, 0).setDepth(2).setBlendMode(Phaser.BlendModes.MULTIPLY);
+      if (a.dark > 0.05) this.add.rectangle(0, 0, VIEW_W, 128, 0x070b24, a.dark * 0.55).setOrigin(0, 0).setDepth(2);
+    }
 
     this.foeImg = this.add.image(FOE.x, FOE.y, 'mon_f_nibbit').setOrigin(0.5, 1).setDepth(10).setVisible(false);
     this.plyImg = this.add.image(PLY.x, PLY.y, 'mon_b_nibbit').setOrigin(0.5, 1).setDepth(12).setVisible(false);
@@ -174,6 +184,7 @@ export class BattleScene extends Phaser.Scene {
   private async wrapUp(): Promise<void> {
     const result = this.battle.over!;
     const outcome: BattleOutcome = { result };
+    if (result === 'win' || result === 'caught') playMusic('victory', 100);
     const trainer = this.init0.trainer;
     this.plyBox.hide(); this.foeBox.hide();
     if (result === 'win' && trainer) {

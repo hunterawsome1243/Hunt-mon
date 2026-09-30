@@ -109,6 +109,7 @@ function dateBase(id: string, name: string, w: number, h: number, base: string, 
 }
 export function dateMira(): MapDef {
   const b = dateBase('date_mira', 'Emberwick Pond', 14, 10, 'grass');
+  b.time = 18.7;
   b.treeBorder();
   b.fill(3, 2, 7, 4, 'water');
   b.d(2, 6, 'bench'); b.d(10, 6, 'lantern'); b.d(3, 1, 'flowers_p'); b.d(11, 4, 'flowers_y');
@@ -119,6 +120,7 @@ export function dateMira(): MapDef {
 }
 export function dateRhea(): MapDef {
   const b = dateBase('date_rhea', 'East Cliffs', 14, 10, 'grass');
+  b.time = 6.1;
   b.treeBorder();
   for (let x = 2; x < 12; x++) { b.g(x, 1, 'cliff_top'); b.g(x, 2, 'cliff'); }
   b.fill(4, 4, 6, 3, 'grass2'); b.d(10, 6, 'bench'); b.d(3, 5, 'flowers_y');
@@ -128,6 +130,7 @@ export function dateRhea(): MapDef {
 }
 export function dateIlsa(): MapDef {
   const b = dateBase('date_ilsa', 'Starlit Clearing', 14, 10, 'forest_floor');
+  b.time = 23;
   b.terrain = 'forest';
   for (let y = 0; y < b.h; y++) for (let x = 0; x < b.w; x++) if (x === 0 || y === 0 || x === b.w - 1 || y === b.h - 1) b.d(x, y, 'mushroom');
   for (const [x, y] of [[2, 2], [11, 3], [3, 7], [10, 7], [6, 2], [8, 8]]) b.d(x, y, 'glow_flower');
@@ -138,6 +141,7 @@ export function dateIlsa(): MapDef {
 }
 export function dateOdette(): MapDef {
   const b = dateBase('date_odette', 'Moth & Mug (After Hours)', 11, 8, 'cafe_floor', true);
+  b.time = 21.5;
   for (let x = 0; x < b.w; x++) { b.g(x, 0, 'in_wall'); b.d(x, 0, x === 2 || x === 8 ? 'in_window' : 'in_wall'); }
   for (let y = 0; y < b.h; y++) { b.g(0, y, 'void'); b.g(b.w - 1, y, 'void'); }
   b.fill(0, b.h - 1, b.w, 1, 'void');

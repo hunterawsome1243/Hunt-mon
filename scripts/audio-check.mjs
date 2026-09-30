@@ -15,7 +15,7 @@ try {
   const browser = await chromium.launch({ executablePath: exe, args: ['--autoplay-policy=no-user-gesture-required'] });
   const page = await browser.newPage();
   const logs = [];
-  page.on('console', (m) => { if (['error', 'warning'].includes(m.type())) logs.push(m.text()); });
+  page.on('console', (m) => { if (['error', 'warning'].includes(m.type()) && !/GL Driver Message/.test(m.text())) logs.push(m.text()); });
   page.on('pageerror', (e) => logs.push('pageerror: ' + e.message));
   await page.goto(`http://localhost:${PORT}/?quick`);
   await page.waitForFunction(() => window.__audioTools, null, { timeout: 15000 });

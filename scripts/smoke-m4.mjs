@@ -16,7 +16,7 @@ try {
   const ctx = await browser.newContext({ viewport: { width: 720, height: 480 } });
   const page = await ctx.newPage();
   const logs = [];
-  page.on('console', (m) => { if (['error', 'warning'].includes(m.type())) logs.push(`${m.type()}: ${m.text()}`); });
+  page.on('console', (m) => { if (['error', 'warning'].includes(m.type()) && !/GL Driver Message/.test(m.text())) logs.push(`${m.type()}: ${m.text()}`); });
   page.on('pageerror', (e) => logs.push('pageerror: ' + e.message));
   const press = async (k, ms = 140) => { await page.keyboard.press(k); await sleep(ms); };
   const st = () => page.evaluate(() => window.__hunt.state());

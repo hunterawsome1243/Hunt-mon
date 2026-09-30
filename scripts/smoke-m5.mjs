@@ -17,7 +17,7 @@ try {
   const browser = await chromium.launch({ executablePath: exe, args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
   const page = await browser.newPage({ viewport: { width: 720, height: 480 } });
   const logs = [];
-  page.on('console', (m) => { if (['error', 'warning'].includes(m.type())) logs.push(`${m.type()}: ${m.text()}`); });
+  page.on('console', (m) => { if (['error', 'warning'].includes(m.type()) && !/GL Driver Message/.test(m.text())) logs.push(`${m.type()}: ${m.text()}`); });
   page.on('pageerror', (e) => logs.push('pageerror: ' + e.message));
   await page.goto(`http://localhost:${PORT}/?quick`);
   await page.waitForFunction(() => window.__hunt, null, { timeout: 15000 });

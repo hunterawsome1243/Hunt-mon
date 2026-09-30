@@ -7,6 +7,7 @@ import { InputManager } from '../engine/input/InputManager';
 import { sfx } from '../engine/audio/Sfx';
 import { win } from '../engine/ui/kit';
 import { fmtPlay } from '../game/save/SaveManager';
+import { fmtClock, gameMinutes } from '../game/systems/Clock';
 import { state } from '../game/state/GameState';
 import { bagScreen } from './screens/BagScreen';
 import { boxScreen } from './screens/BoxScreen';
@@ -112,7 +113,7 @@ export class MenuScene extends Phaser.Scene {
     const info = this.add.container(4, 18);
     const g = win(this, 0, 0, 132, 52);
     const mapName = MAPS[pos.map]?.name ?? pos.map;
-    const t = this.add.text(8, 7, `${state.playerName}\n${mapName}\nDay ${state.day}  ${fmtPlay(state.playMs)}\n$${state.money}`, { ...textStyle(), lineSpacing: 2 });
+    const t = this.add.text(8, 7, `${state.playerName}\n${mapName}\nDay ${state.day}  ${fmtClock(gameMinutes(state.clockBase, state.playMs))}\n$${state.money}  (${fmtPlay(state.playMs)})`, { ...textStyle(), lineSpacing: 2 });
     info.add([g, t]);
     info.setAlpha(0).setX(-20);
     this.tweens.add({ targets: info, alpha: 1, x: 4, duration: 180, ease: 'Back.easeOut' });

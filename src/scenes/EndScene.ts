@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { FONT, VIEW_H, VIEW_W } from '../config';
 import { rng } from '../engine/rng';
 import { InputManager } from '../engine/input/InputManager';
+import { playMusic } from '../engine/audio';
 import { fmtPlay } from '../game/save/SaveManager';
 import { state } from '../game/state/GameState';
 
@@ -18,6 +19,7 @@ export class EndScene extends Phaser.Scene {
     this.input2 = new InputManager(this);
     this.done = false;
     this.cameras.main.setBackgroundColor('#0b0b1c');
+    playMusic('ending', 200);
     this.cameras.main.fadeIn(1200, 255, 255, 255);
     for (let i = 0; i < 70; i++) {
       const s = this.add.rectangle(rng.int(0, VIEW_W), rng.int(0, VIEW_H), 1, 1, 0xffffff, rng.next() * 0.8 + 0.2);

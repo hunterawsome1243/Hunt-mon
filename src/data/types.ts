@@ -36,6 +36,8 @@ export interface MapDef {
   triggers: TriggerDef[];
   /** pick-up-able items lying around (flag makes each one single-use) */
   pickups: PickupDef[];
+  /** fixed hour of day for this map (date scenes) */
+  time?: number;
   /** dialogue that plays automatically on arrival (date scenes) */
   autorun?: string;
   spawn?: { x: number; y: number; dir: Dir };

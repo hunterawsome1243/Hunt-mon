@@ -3,6 +3,7 @@ import { DEPTH, FONT, VIEW_H, VIEW_W } from '../config';
 import { InputManager } from '../engine/input/InputManager';
 import { rng } from '../engine/rng';
 import { sfx } from '../engine/audio/Sfx';
+import { playMusic } from '../engine/audio';
 import { textStyle } from '../engine/ui/DialogueBox';
 import { ListMenu } from '../engine/ui/ListMenu';
 import { backdrop, COL, text, win } from '../engine/ui/kit';
@@ -30,6 +31,7 @@ export class TitleScene extends Phaser.Scene {
     this.menu.onSound = (n) => sfx(n === 'move' ? 'cursor' : n);
     this.drawScenery();
     this.logo = this.makeLogo();
+    playMusic('title', 0);
     this.cameras.main.fadeIn(500, 0, 0, 0);
     (window as unknown as { __title?: TitleScene }).__title = this;
     void this.main();

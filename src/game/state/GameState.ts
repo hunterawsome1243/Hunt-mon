@@ -20,6 +20,10 @@ export const defaultOptions = (): Options => ({ textSpeed: 1, runToggle: false, 
 export class GameState {
   look = 'hero_a';
   playMs = 0;
+  /** game-clock minutes at playMs = 0 (8:00 at the start of a new game) */
+  clockBase = 480;
+  /** debug-only overrides */
+  debugWeather: 'clear' | 'rain' | 'heavy_rain' | null = null;
   options: Options = defaultOptions();
   playerName = 'Kit';
   flags: Record<string, boolean> = {};
@@ -62,12 +66,13 @@ export class GameState {
   giveStarter(species: string, level = 5): Creature { const c = createCreature(species, level); this.addCreature(c); return c; }
 
   toJSON(): object {
-    return { look: this.look, playMs: this.playMs, options: this.options, playerName: this.playerName, flags: this.flags, vars: this.vars, day: this.day, romance: this.romance, party: this.party, box: this.box,
+    return { look: this.look, playMs: this.playMs, clockBase: this.clockBase, options: this.options, playerName: this.playerName, flags: this.flags, vars: this.vars, day: this.day, romance: this.romance, party: this.party, box: this.box,
       bag: this.bag, money: this.money, badges: this.badges, dex: this.dex, home: this.home, steps: this.steps, returnTo: this.returnTo };
   }
   load(o: Partial<GameState>): void {
     this.look = o.look ?? 'hero_a';
     this.playMs = o.playMs ?? 0;
+    this.clockBase = o.clockBase ?? 480;
     this.options = { ...defaultOptions(), ...(o.options ?? {}) };
     this.playerName = o.playerName ?? 'Kit';
     this.flags = { ...(o.flags ?? {}) };

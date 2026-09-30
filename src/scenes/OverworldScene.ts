@@ -25,6 +25,10 @@ import { safeFlash } from '../engine/fx/Safe';
 import { ITEMS } from '../data/items';
 import { giveGift } from '../game/romance/Affection';
 import type { MenuRequest, MenuResult } from './MenuScene';
+import { Atmosphere, areaKindOf } from '../engine/fx/Atmosphere';
+import { playMusic } from '../engine/audio';
+import { trackForMap } from '../data/music/tracks';
+import { areaWeather, gameMinutes, weatherForDay } from '../game/systems/Clock';
 import type { BattleInit, BattleOutcome } from './BattleScene';
 
 interface AnimTile { sprite: Phaser.GameObjects.Image; key: string; frames: number; ms: number }
@@ -54,6 +58,7 @@ export class OverworldScene extends Phaser.Scene {
   private bars: Phaser.GameObjects.Rectangle[] = [];
   private stepsSince = 0;
   private runOn = false;
+  private atmo?: Atmosphere;
   private seed: SceneData = {};
 
   constructor() { super('overworld'); }
@@ -83,6 +88,12 @@ export class OverworldScene extends Phaser.Scene {
       this.npcs.push({ def, actor, homeX: def.x, homeY: def.y, timer: 800 + rng.int(0, 2000) });
     }
 
+    const kind = areaKindOf(this.map);
+    const w = state.debugWeather ?? weatherForDay(state.day);
+    const aw = areaWeather(kind, state.day);
+    if (state.debugWeather && kind !== 'cave' && kind !== 'indoor') aw.rain = w === 'clear' ? 0 : w === 'rain' ? 1 : 2;
+    this.atmo = new Atmosphere(this, this.map, aw, this.map.time);
+    playMusic(trackForMap(this.map.id, this.map.indoor, this.map.terrain));
     this.grassOverlay = this.add.image(0, 0, 't_tall_grass', 0).setOrigin(0, 0).setVisible(false).setDepth(DEPTH.entity + 500);
     this.grassOverlay.setCrop(0, 8, TILE, 8);
 
@@ -119,6 +130,9 @@ export class OverworldScene extends Phaser.Scene {
       addMon: (sp: string, lv: number) => { state.addCreature(createCreature(sp, lv)); },
       setLevel: (i: number, lv: number) => { const c = state.party[i]; c.level = lv; c.xp = xpForLevel(SPECIES[c.species].curve, lv); c.moves = movesAt(c.species, lv).map((id) => ({ id, pp: MOVES[id].pp, maxPp: MOVES[id].pp })); c.hp = maxHp(c); },
       nearLevelUp: (i: number) => { const c = state.party[i]; c.xp = xpForLevel(SPECIES[c.species].curve, c.level + 1) - 1; },
+      setWeather: (w: 'clear' | 'rain' | 'heavy_rain' | null) => { state.debugWeather = w; },
+      setHour: (h: number) => { state.clockBase = ((h * 60 - state.playMs / 1000) % 1440 + 1440) % 1440; },
+      hour: () => gameMinutes(state.clockBase, state.playMs) / 60,
       hpAll: (hp: number) => { state.party.forEach((c) => { c.hp = Math.min(c.hp, hp); }); },
       money: () => state.money,
       flag: (k: string) => state.flag(k),
@@ -438,6 +452,7 @@ export class OverworldScene extends Phaser.Scene {
     }
     if (name === 'sleep') {
       state.healParty();
+      state.clockBase = ((360 - state.playMs / 1000) % 1440 + 1440) % 1440;
       const cam = this.cameras.main;
       await new Promise<void>((res) => { cam.once('camerafadeoutcomplete', () => res()); cam.fadeOut(600, 0, 0, 0); });
       nextDay(state);
@@ -464,6 +479,7 @@ export class OverworldScene extends Phaser.Scene {
     this.updateGrassOverlay();
     this.checkTrainers();
     this.centerCamera(false, dt);
+    this.atmo?.update(dt, this.cameras.main, gameMinutes(state.clockBase, state.playMs) / 60, { x: this.player.px, y: this.player.py });
   }
 
   private handlePlayer(dt: number): void {

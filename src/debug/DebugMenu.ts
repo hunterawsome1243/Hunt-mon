@@ -65,6 +65,12 @@ export class DebugMenu {
     sec(`Items (money $${state.money}):`);
     btn('+$1000', () => { state.money += 1000; });
     for (const id of ['potion', 'super_potion', 'revive', 'catch_orb', 'great_orb', 'full_heal']) btn(`+5 ${ITEMS[id].name}`, () => state.addItem(id, 5));
+    sec('Time & weather:');
+    const ow2 = () => this.game.scene.getScene('overworld') as Phaser.Scene & { setHourDebug?: (h: number) => void };
+    void ow2;
+    const setHour = (h: number) => { state.clockBase = ((h * 60 - state.playMs / 1000) % 1440 + 1440) % 1440; };
+    for (const [l, h] of [['Dawn', 6.2], ['Noon', 12], ['Dusk', 18.6], ['Night', 23]] as const) btn(l, () => setHour(h));
+    for (const [l, w] of [['Clear', 'clear'], ['Rain', 'rain'], ['Storm', 'heavy_rain'], ['Auto', null]] as const) btn(l, () => { state.debugWeather = w; });
     sec('Flags:');
     btn('mira.intro', () => state.setFlag('mira.intro'));
   }

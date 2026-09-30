@@ -104,14 +104,14 @@ export class Atmosphere {
   private buildRain(level: 1 | 2): void {
     const n = level === 2 ? 130 : 70;
     for (let i = 0; i < n; i++) {
-      const r = this.scene.add.rectangle(0, 0, 1, level === 2 ? 7 : 5, 0xbcd4ff, 0.55).setAngle(12).setScrollFactor(0).setDepth(DEPTH.fx + 4);
+      const r = this.scene.add.rectangle(0, 0, 1, level === 2 ? 7 : 5, 0xcfe0ff, 0.8).setAngle(12).setScrollFactor(0).setDepth(DEPTH.fx + 4);
       this.rain.push({ r, x: rng.int(-20, VIEW_W + 20), y: rng.int(-10, VIEW_H), v: (level === 2 ? 340 : 260) + rng.int(0, 80) });
     }
     this.rainShade = this.scene.add.rectangle(0, 0, VIEW_W, VIEW_H, 0x1a2a48, level === 2 ? 0.3 : 0.18).setOrigin(0, 0).setScrollFactor(0).setDepth(DEPTH.fx + 3);
   }
   private buildFog(): void {
     for (let i = 0; i < 7; i++) {
-      const img = this.scene.add.image(rng.int(-40, VIEW_W), rng.int(20, VIEW_H - 20), 'fog_blob').setTint(0xd8ece0).setAlpha(0.22 + rng.next() * 0.16).setScale(1.3 + rng.next() * 1.2).setScrollFactor(0).setDepth(DEPTH.fx + 3);
+      const img = this.scene.add.image(rng.int(-40, VIEW_W), rng.int(20, VIEW_H - 20), 'fog_blob').setTint(0xd8ece0).setAlpha(0.3 + rng.next() * 0.18).setScale(1.3 + rng.next() * 1.2).setScrollFactor(0).setDepth(DEPTH.fx + 3);
       this.fog.push({ img, v: 3 + rng.next() * 6 });
     }
   }
@@ -210,7 +210,7 @@ export class Atmosphere {
       }
     }
     // fog, dust, shadows
-    for (const f of this.fog) { f.img.x += f.v * dt; if (f.img.x > VIEW_W + 120) f.img.x = -120; f.img.alpha = 0.2 + 0.1 * Math.sin(this.t / 2400 + f.v); }
+    for (const f of this.fog) { f.img.x += f.v * dt; if (f.img.x > VIEW_W + 120) f.img.x = -120; f.img.alpha = 0.3 + 0.12 * Math.sin(this.t / 2400 + f.v); }
     for (const d of this.dust) {
       d.ph += dt * 2; d.x += d.vx * dt; d.y += d.vy * dt + Math.sin(d.ph) * 0.1;
       if (d.x > VIEW_W) d.x = 0; if (d.y < 0) d.y = VIEW_H;

@@ -8,6 +8,10 @@ import { FX_TEXTURES } from '../data/art/fx';
 import { SPECIES_LIST } from '../data/creatures';
 import { creatureBack, creatureFront, creatureIcon } from '../engine/gfx/CreatureArt';
 import { shade } from '../data/art/characters';
+import { installAudioUnlock } from '../engine/audio';
+import { AudioEngine } from '../engine/audio/AudioEngine';
+import { TRACKS } from '../data/music/tracks';
+import { makeAtmosphereTextures } from '../engine/fx/Atmosphere';
 import { state } from '../game/state/GameState';
 import { TextureFactory, Manifest } from '../engine/gfx/TextureFactory';
 
@@ -54,6 +58,14 @@ export class BootScene extends Phaser.Scene {
       buf.set(4, 4, 5).set(5, 4, 5).set(2, 2, 5).set(3, 1, 5);
       TextureFactory.single(this, `ball_${id}`, buf);
     }
+    makeAtmosphereTextures(this);
+    installAudioUnlock();
+    (window as unknown as { __audioTools?: unknown }).__audioTools = {
+      tracks: Object.keys(TRACKS),
+      sfx: ['blip', 'cursor', 'select', 'back', 'deny', 'menu_open', 'battle_start', 'alert', 'pickup', 'badge', 'heal_jingle', 'heart', 'nope', 'status', 'statup', 'statdown', 'send', 'throw', 'capture', 'shake', 'caught', 'breakfree', 'hit', 'hit_super', 'hit_weak', 'faint', 'heal', 'levelup', 'evolve', 'move_flame', 'move_tide', 'move_leaf', 'move_volt', 'move_frost', 'move_stone', 'move_gale', 'move_venom', 'move_mind', 'move_shade', 'move_fist', 'move_normal'],
+      renderTrack: (id: string, sec: number) => AudioEngine.renderTrack(id, sec),
+      renderSfx: (id: string, sec: number) => AudioEngine.renderSfx(id, sec),
+    };
     for (const [k, b] of Object.entries(FX_TEXTURES)) TextureFactory.single(this, k, b);
     for (const sp of SPECIES_LIST) {
       const front = creatureFront(sp.art);
