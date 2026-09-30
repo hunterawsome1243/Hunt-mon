@@ -137,6 +137,8 @@ export class OverworldScene extends Phaser.Scene {
       money: () => state.money,
       flag: (k: string) => state.flag(k),
       item: (id: string) => state.bag[id] ?? 0,
+      vars: () => ({ ...state.vars }),
+      flags: () => Object.keys(state.flags).filter((k) => state.flags[k]),
       setFlag: (k: string, v = true) => state.setFlag(k, v),
       setAff: (npc: string, v: number) => { state.rec(npc).affection = v; state.rec(npc).pending = []; },
       warp: (map: string, x: number, y: number, dir: Dir = 'down') => this.warpTo(map, x, y, dir),

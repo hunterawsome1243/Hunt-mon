@@ -150,7 +150,7 @@ export const RHEA = romanceGraph({
 const I = 'Ilsa';
 const ilsaNodes: Nodes = {
   parcel: { branch: [{ cond: { has: 'parcel' }, next: 'parcel_give' }], next: 'menu' },
-  parcel_give: line(I, 'surprised', 'Is that the parcel from the Elder?! Oh, finally — my spare lens. You have no idea how much I needed this.', 'parcel2', { effects: [{ cmd: 'take', arg: 'parcel' }, fx.flag('quest.parcel_done')] }),
+  parcel_give: line(I, 'surprised', 'Is that the parcel from the Elder?! Oh, finally — my spare lens. You have no idea how much I needed this.', 'parcel2', { effects: [{ cmd: 'take', arg: 'parcel' }, fx.flag('quest.parcel_done'), fx.flag('ilsa.intro')] }),
   parcel2: line(I, 'happy', "I'm Dr. Ilsa Varga, field researcher. I study the glow — the soft light that lives in this region's stones, and in some creatures. It has been dimming.", 'parcel3'),
   parcel3: line(I, 'neutral', "If you win the Cinder Badge from Rhea, come find me. I'll need help with Mistwood. Here — a little research grant for your trouble.", 'menu', { effects: [fx.give('hyper_potion'), fx.aff('ilsa', 2)] }),
   q_offer: line(I, 'neutral', "I'm building a field log of local creatures. Observation matters more than my own notes. If you can register ten different species in your Dex, I'll have real data to work with.", 'q_offer2'),

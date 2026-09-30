@@ -138,6 +138,12 @@ export class BattleScene extends Phaser.Scene {
     }
   }
 
+  /** Index of the first damaging move of the active creature (used by automated tests). */
+  firstDamagingMove(): number {
+    const i = this.battle.p.moves.findIndex((m) => MOVES[m.id].power > 0 && m.pp > 0);
+    return Math.max(0, i);
+  }
+
   update(_t: number, dt: number): void {
     dt = Math.min(dt, 50);
     this.t += dt;

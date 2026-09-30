@@ -48,8 +48,8 @@ export function romanceGraph(c: RomanceCfg): DialogueGraph {
   const n: Nodes = {};
   n.entry = {
     branch: [
-      { cond: { notFlag: `${id}.intro` }, next: 'intro' },
       ...(c.entryBranch ?? []),
+      { cond: { notFlag: `${id}.intro` }, next: 'intro' },
       { cond: { affection: id, gte: 50 }, next: 'greet_close' },
     ],
     next: 'greet',

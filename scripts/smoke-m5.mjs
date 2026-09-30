@@ -39,8 +39,10 @@ try {
     for (let i = 0; i < 900 && (await battleActive()); i++) {
       if ((await phase()) === 'command') {
         await page.evaluate(() => { const b = window.__battle.battle; b.foeParty.forEach((c) => { c.hp = Math.min(c.hp, 1); }); });
+        const mi = await page.evaluate(() => window.__battle.firstDamagingMove());
         await press('z', 250); // Fight
-        await press('z', 250); // first move
+        for (let k = 0; k < mi; k++) await press('ArrowDown', 100);
+        await press('z', 250); // first damaging move
       } else await press('z', 110);
     }
     if (await battleActive()) fail('battle did not finish');
