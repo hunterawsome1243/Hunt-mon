@@ -43,7 +43,7 @@ try {
   if (!(await st()).dialogue) fail('interaction did not open dialogue');
   await sleep(1200); await page.screenshot({ path: 'shots/04_dialogue.png' });
   let closed = false;
-  for (let i = 0; i < 8 && !closed; i++) { await page.keyboard.press('z'); await sleep(250); closed = !(await st()).dialogue; }
+  for (let i = 0; i < 8 && !closed; i++) { await page.keyboard.press(i < 3 ? 'z' : 'x'); await sleep(350); closed = !(await st()).dialogue; }
   if (!closed) fail('dialogue did not close');
   await sleep(300);
   // north exit to route 1
@@ -56,6 +56,23 @@ try {
   await sleep(900);
   await page.keyboard.down('ArrowUp'); await sleep(900); await page.keyboard.up('ArrowUp');
   await page.screenshot({ path: 'shots/05_route1.png' });
+  // Mira: intro -> flirt with a liked trait -> hearts go up
+  await page.evaluate(() => window.__game.scene.getScene('overworld').warpTo('house_neighbor', 7, 3, 'left'));
+  await sleep(900);
+  const press = async (k) => { await page.keyboard.press(k); await sleep(160); };
+  const untilMenu = async () => { for (let i = 0; i < 12 && !(await st()).menu; i++) { await press('z'); await sleep(350); } };
+  await press('z'); await untilMenu();
+  if (!(await st()).menu) fail('Mira menu never appeared');
+  await sleep(500); await page.screenshot({ path: 'shots/06_mira_menu.png' });
+  await press('ArrowDown'); await press('ArrowDown'); await press('z'); await sleep(300); await untilMenu(); await sleep(700); // Flirt
+  if (!(await st()).menu) fail('flirt menu missing');
+  await page.screenshot({ path: 'shots/07_flirt_menu.png' });
+  await press('z'); await sleep(200); // "Your prices are a crime." (witty, liked)
+  await sleep(700);
+  await page.screenshot({ path: 'shots/08_flirt_reaction.png' });
+  await untilMenu();
+  const aff = (await st()).aff.mira;
+  if (!(aff > 0)) fail('flirt did not raise affection: ' + aff);
   // every map loads via warp
   for (const m of await page.evaluate(() => window.__hunt.maps)) {
     await page.evaluate((id) => window.__game.scene.getScene('overworld').warpTo(id, 5, 5), m);

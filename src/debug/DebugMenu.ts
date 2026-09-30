@@ -1,5 +1,8 @@
 import type Phaser from 'phaser';
 import { MAPS } from '../data/maps';
+import { ROMANCE } from '../data/romance/profiles';
+import { changeAffection } from '../game/romance/Affection';
+import { state } from '../game/state/GameState';
 
 /** DOM overlay toggled with backtick. Extended each milestone (items, levels, affection...). */
 export class DebugMenu {
@@ -35,5 +38,18 @@ export class DebugMenu {
       };
       this.el.appendChild(b);
     }
+    const sec = (t: string) => { const h = document.createElement('div'); h.innerHTML = `<br>${t}<br>`; this.el.appendChild(h); };
+    const btn = (label: string, fn: () => void) => { const b = document.createElement('button'); b.textContent = label; b.style.margin = '2px'; b.onclick = () => { fn(); this.render(); }; this.el.appendChild(b); };
+    sec(`Day ${state.day}`);
+    btn('Next day', () => { state.day++; });
+    sec('Affection (set to):');
+    for (const p of Object.values(ROMANCE)) {
+      const row = document.createElement('div');
+      row.append(`${p.name} ${state.affection(p.id)}  `);
+      this.el.appendChild(row);
+      for (const v of [0, 25, 50, 75, 100]) btn(String(v), () => { changeAffection(state, p.id, v - state.affection(p.id)); state.rec(p.id).pending = []; });
+    }
+    sec('Flags:');
+    btn('mira.intro', () => state.setFlag('mira.intro'));
   }
 }

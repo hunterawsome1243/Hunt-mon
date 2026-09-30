@@ -34,8 +34,8 @@ function emberwick(): MapDef {
   b.fill(22, 20, 6, 3, 'tall_grass');
   b.fill(4, 12, 1, 1, 'path');
   b.warp(15, 0, 'route1', 8, 23, 'up'); b.warp(16, 0, 'route1', 9, 23, 'up');
-  b.npc({ id: 'kid1', x: 12, y: 17, look: 'kid', dir: 'down', move: 'wander', radius: 3, lines: ['I want to catch a', 'creature just like the', 'ones in the stories!'] });
-  b.npc({ id: 'elder1', x: 17, y: 12, look: 'elder', dir: 'left', move: 'look', lines: ['Ah, a new traveller.', 'The world is wide.', 'Walk with care, and', 'run only with purpose.'] });
+  b.npc({ id: 'kid1', x: 12, y: 17, look: 'kid', dir: 'down', move: 'wander', radius: 3, dialogue: 'kid' });
+  b.npc({ id: 'elder1', x: 17, y: 12, look: 'elder', dir: 'left', move: 'look', dialogue: 'elder' });
   b.npc({ id: 'vf1', x: 20, y: 17, look: 'villager_f', dir: 'up', move: 'wander', radius: 2, lines: ['The pond glitters so', 'nicely in the sun.'] });
   b.npc({ id: 'vm1', x: 26, y: 15, look: 'villager_m', dir: 'left', move: 'idle', lines: ['Hold SHIFT to run.', 'Your legs will thank', 'you for the exercise!'] });
   b.spawn = { x: 5, y: 12, dir: 'down' };
@@ -45,19 +45,19 @@ function emberwick(): MapDef {
 function housePlayer(): MapDef {
   const b = room('house_player', "Your House", 11, 8);
   b.d(1, 0, 'in_shelf'); b.d(8, 0, 'in_shelf');
-  b.d(1, 1, 'bed_top'); b.d(1, 2, 'bed_bot');
+  b.d(1, 1, 'bed_top'); b.d(1, 2, 'bed_bot'); b.talk(1, 1, 'bed'); b.talk(1, 2, 'bed'); b.talk(1, 0, 'shelf'); b.talk(8, 0, 'shelf');
   b.d(6, 3, 'table'); b.d(9, 1, 'plant');
   b.fill(4, 3, 4, 3, 'rug'); // fine: rug is walkable ground, table sits on it
   b.d(6, 3, 'table');
   b.warp(5, 7, 'emberwick', 7, 11, 'down');
-  b.npc({ id: 'mom', x: 8, y: 4, look: 'villager_f', dir: 'left', move: 'look', lines: ['Good morning, sweetheart!', 'Be careful out there.', 'Come home any time.'] });
+  b.npc({ id: 'mom', x: 8, y: 4, look: 'villager_f', dir: 'left', move: 'look', dialogue: 'mom' });
   return b.build();
 }
 function houseNeighbor(): MapDef {
-  const b = room('house_neighbor', 'Neighbour House', 9, 7);
+  const b = room('house_neighbor', "Mira's Shop", 9, 7);
   b.d(1, 0, 'in_shelf'); b.d(7, 1, 'plant'); b.d(3, 3, 'table'); b.fill(3, 4, 3, 2, 'rug');
   b.warp(4, 6, 'emberwick', 23, 11, 'down');
-  b.npc({ id: 'nb', x: 6, y: 3, look: 'shopkeeper', dir: 'left', move: 'idle', lines: ['Welcome! Sorry about', 'the mess. I have been', 'reading all day.'] });
+  b.npc({ id: 'mira', x: 6, y: 3, look: 'shopkeeper', dir: 'left', move: 'idle', dialogue: 'mira' });
   return b.build();
 }
 

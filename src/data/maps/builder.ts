@@ -55,6 +55,8 @@ export class MapBuilder {
   pathH(x: number, y: number, len: number, wide = 1): this { return this.fill(x, y, len, wide, 'path'); }
   pathV(x: number, y: number, len: number, wide = 1): this { return this.fill(x, y, wide, len, 'path'); }
   warp(x: number, y: number, to: string, tx: number, ty: number, dir: Dir): this { this.warps.push({ x, y, to, tx, ty, dir }); return this; }
+  /** Non-tile interaction on a solid tile (bed, bookshelf...). */
+  talk(x: number, y: number, dialogue: string): this { this.signs.push({ x, y, dialogue }); return this; }
   sign(x: number, y: number, lines: string[]): this { this.d(x, y, 'sign'); this.signs.push({ x, y, lines }); return this; }
   npc(n: NpcDef): this { this.npcs.push(n); return this; }
   build(): MapDef {

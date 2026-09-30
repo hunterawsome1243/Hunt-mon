@@ -6,6 +6,10 @@ import type { MapDef, NpcDef } from '../data/types';
 import { Actor } from '../engine/grid/Actor';
 import { InputManager } from '../engine/input/InputManager';
 import { DialogueBox, textStyle } from '../engine/ui/DialogueBox';
+import { DialogueRunner } from '../engine/script/DialogueRunner';
+import { SceneDialogueUI } from '../engine/script/SceneDialogueUI';
+import { nextDay } from '../game/romance/Affection';
+import { state } from '../game/state/GameState';
 import { rng } from '../engine/rng';
 
 interface AnimTile { sprite: Phaser.GameObjects.Image; key: string; frames: number; ms: number }
@@ -21,6 +25,8 @@ export class OverworldScene extends Phaser.Scene {
   private grass: boolean[][] = [];
   private animTiles: AnimTile[] = [];
   private dialogue!: DialogueBox;
+  private runner!: DialogueRunner;
+  private ui!: SceneDialogueUI;
   private locked = false;
   private turnWait = 0;
   private chain = false;
@@ -42,6 +48,11 @@ export class OverworldScene extends Phaser.Scene {
     this.animTiles = []; this.npcs = []; this.locked = false; this.turnWait = 0; this.chain = false;
     this.buildMap();
     this.dialogue = new DialogueBox(this);
+    this.ui = new SceneDialogueUI(this, this.dialogue, {
+      npcActor: (id) => this.npcs.find((n) => n.def.id === id)?.actor,
+      command: (name) => this.command(name),
+    });
+    this.runner = new DialogueRunner(this.ui, state, rng);
 
     this.player = new Actor(this, 'player', 'c_hero_a', sx, sy, sd);
     this.player.onArrive = (a) => this.onPlayerArrive(a);
@@ -67,7 +78,7 @@ export class OverworldScene extends Phaser.Scene {
 
   private debugApi() {
     return {
-      state: () => ({ map: this.map.id, x: this.player.tx, y: this.player.ty, dir: this.player.dir, moving: this.player.moving, locked: this.locked, dialogue: this.dialogue.active }),
+      state: () => ({ day: state.day, aff: { ...Object.fromEntries(Object.entries(state.romance).map(([k, v]) => [k, v.affection])) }, map: this.map.id, x: this.player.tx, y: this.player.ty, dir: this.player.dir, moving: this.player.moving, locked: this.locked, dialogue: this.dialogue.active, menu: this.dialogue.hasMenu }),
       maps: Object.keys(MAPS),
     };
   }
@@ -153,12 +164,25 @@ export class OverworldScene extends Phaser.Scene {
     const sign = this.map.signs.find((s) => s.x === t.x && s.y === t.y);
     if (!npc && !sign) return;
     this.locked = true;
+    const target = npc?.def ?? sign!;
     if (npc) {
       const opp: Record<Dir, Dir> = { up: 'down', down: 'up', left: 'right', right: 'left' };
       npc.actor.face(opp[this.player.dir]);
-      await this.dialogue.say(npc.def.lines);
-    } else if (sign) await this.dialogue.say(sign.lines);
-    this.locked = false;
+    }
+    try {
+      if (target.dialogue) await this.runner.run(target.dialogue);
+      else if (target.lines) await this.dialogue.say({ text: target.lines.join(' ') });
+    } finally { this.locked = false; }
+  }
+
+  private async command(name: string): Promise<void> {
+    if (name === 'sleep') {
+      const cam = this.cameras.main;
+      await new Promise<void>((res) => { cam.once('camerafadeoutcomplete', () => res()); cam.fadeOut(600, 0, 0, 0); });
+      nextDay(state);
+      await new Promise<void>((r) => this.time.delayedCall(500, () => r()));
+      await new Promise<void>((res) => { cam.once('camerafadeincomplete', () => res()); cam.fadeIn(600, 0, 0, 0); });
+    }
   }
 
   // ---------- frame loop ----------
@@ -169,9 +193,8 @@ export class OverworldScene extends Phaser.Scene {
     this.dialogue.update(dt);
     this.updateTiles(dt);
 
-    if (this.dialogue.active) {
-      if (this.input2.just('confirm') || this.input2.just('back')) this.dialogue.advance();
-    } else if (!this.locked && !dbg) {
+    if (this.dialogue.active) this.dialogue.handleInput(this.input2);
+    else if (!this.locked && !dbg) {
       this.handlePlayer(dt);
     }
     this.player.update(dt);

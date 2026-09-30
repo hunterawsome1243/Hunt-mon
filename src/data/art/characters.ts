@@ -2,7 +2,7 @@ import { PixelBuffer } from '../../engine/gfx/PixelBuffer';
 
 export interface Look { skin: string; hair: string; shirt: string; pants: string; hairStyle?: 'short' | 'long' | 'cap'; accent?: string }
 
-const shade = (hex: string, k: number): string => {
+export const shade = (hex: string, k: number): string => {
   const n = (i: number) => Math.max(0, Math.min(255, Math.round(parseInt(hex.slice(i, i + 2), 16) * k)));
   return '#' + [1, 3, 5].map((i) => n(i).toString(16).padStart(2, '0')).join('');
 };
@@ -79,5 +79,8 @@ export const LOOKS: Record<string, Look> = {
   villager_f: { skin: '#f7d3b0', hair: '#c9772a', shirt: '#e0a84a', pants: '#7a5a8a', hairStyle: 'long' },
   elder: { skin: '#e8bf98', hair: '#d8d8e0', shirt: '#7a5aa8', pants: '#5a4a6a', hairStyle: 'short' },
   kid: { skin: '#f2c9a0', hair: '#2a2a3a', shirt: '#e0553a', pants: '#3a5a9a', hairStyle: 'cap', accent: '#f2d95c' },
+  rhea: { skin: '#b9835a', hair: '#c8452f', shirt: '#2f3f6a', pants: '#3a3a4a', hairStyle: 'short', accent: '#f2d95c' },
+  ilsa: { skin: '#f0d0b0', hair: '#4a3a6a', shirt: '#e8e2d0', pants: '#5a6a4a', hairStyle: 'long', accent: '#4aa89a' },
+  odette: { skin: '#8a5a3a', hair: '#1f1a2a', shirt: '#e8895a', pants: '#f0e2c0', hairStyle: 'long', accent: '#f2f2f2' },
   shopkeeper: { skin: '#c98e62', hair: '#2a1a1a', shirt: '#4aa89a', pants: '#3a3a5a', hairStyle: 'long' },
 };

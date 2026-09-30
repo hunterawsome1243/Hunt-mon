@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { TILES } from '../data/art/tiles';
 import { LOOKS, characterFrames } from '../data/art/characters';
+import { EXPRESSIONS, emotes, heart, portraitFrames } from '../data/art/portraits';
 import { TextureFactory, Manifest } from '../engine/gfx/TextureFactory';
 
 /** Generates all procedural textures. Optional PNG sheets from public/assets/manifest.json override by key. */
@@ -27,7 +28,13 @@ export class BootScene extends Phaser.Scene {
     for (const [name, def] of Object.entries(TILES)) {
       TextureFactory.sheet(this, `t_${name}`, Array.from({ length: def.frames }, (_, i) => def.gen(i)));
     }
-    for (const [name, look] of Object.entries(LOOKS)) TextureFactory.sheet(this, `c_${name}`, characterFrames(look));
+    for (const [name, look] of Object.entries(LOOKS)) {
+      TextureFactory.sheet(this, `c_${name}`, characterFrames(look));
+      TextureFactory.sheet(this, `p_${name}`, portraitFrames(look));
+    }
+    TextureFactory.sheet(this, 'ui_heart', [heart('full'), heart('empty')]);
+    TextureFactory.sheet(this, 'ui_emote', emotes());
+    void EXPRESSIONS;
     this.scene.start('overworld');
   }
 }
