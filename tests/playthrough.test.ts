@@ -35,7 +35,7 @@ function makeWorld(policy: (options: string[], text?: string) => number | string
       switch (name) {
         case 'battle': s.vars['battle.won'] = winBattles ? 1 : 0; if (winBattles) s.setFlag('trainer.' + arg); break;
         case 'wild': s.vars['battle.result'] = 1; break;
-        case 'badge': if (!s.badges.includes(arg!)) s.badges.push(arg!); s.setFlag(`badge.${arg}`); s.setFlag(s.badges.length >= 2 ? 'badge.second' : 'badge.first'); break;
+        case 'badge': s.awardBadge(arg!); break;
         case 'take': s.bag[arg!] = Math.max(0, (s.bag[arg!] ?? 0) - 1); break;
         case 'date': w.dates.push(arg!); await runner.run(`date_${arg}`); break;
         case 'return': nextDay(s); break;

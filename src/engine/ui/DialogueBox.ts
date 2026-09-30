@@ -60,6 +60,8 @@ export class DialogueBox {
   private lastPortrait = '';
   private open = false;
   active = false;
+  /** texts of the choices currently offered (for tooling/tests) */
+  choiceTexts: string[] = [];
   get hasMenu(): boolean { return !!this.menu; }
   charsPerSec = 42;
   onBlip?: () => void;
@@ -173,6 +175,7 @@ export class DialogueBox {
     this.autoMode = false;
     this.begin(o, o.text ? paginate(o.text, this.cols) : ['']);
     this.wantChoices = o.options;
+    this.choiceTexts = o.options;
     this.sel = 0;
     return new Promise((res) => { this.chooseResolve = res; });
   }

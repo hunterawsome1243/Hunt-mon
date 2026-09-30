@@ -59,6 +59,12 @@ export class GameState {
     if (this.party.length < 6) { this.party.push(c); return 'party'; }
     this.box.push(c); return 'box';
   }
+  /** Gym badge: recorded, flagged (`badge.<id>`, plus `badge.first` / `badge.second` for shop unlocks). */
+  awardBadge(id: string): void {
+    if (!this.badges.includes(id)) this.badges.push(id);
+    this.setFlag(`badge.${id}`);
+    this.setFlag(this.badges.length >= 2 ? 'badge.second' : 'badge.first');
+  }
   addItem(id: string, n = 1): void { this.bag[id] = (this.bag[id] ?? 0) + n; }
   healParty(): void { this.party.forEach(healFully); }
   /** Starting inventory for a fresh game. */

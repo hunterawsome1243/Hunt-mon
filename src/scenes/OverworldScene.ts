@@ -105,7 +105,8 @@ export class OverworldScene extends Phaser.Scene {
     this.cameras.main.setBackgroundColor(this.map.indoor ? '#0b0910' : '#101820');
     this.centerCamera(true);
     this.cameras.main.fadeIn(280, 0, 0, 0);
-    (window as unknown as { __hunt?: unknown }).__hunt = this.debugApi();
+    (window as unknown as { __hunt?: unknown; __choiceTexts?: () => string[] }).__hunt = this.debugApi();
+    (window as unknown as { __choiceTexts?: () => string[] }).__choiceTexts = () => this.dialogue.choiceTexts;
     if (this.map.autorun) {
       this.locked = true;
       this.time.delayedCall(1000, () => { void this.runner.run(this.map.autorun!).catch((e) => { console.error('autorun failed', e); this.locked = false; }); });
@@ -119,6 +120,7 @@ export class OverworldScene extends Phaser.Scene {
     return {
       state: () => ({ day: state.day, aff: { ...Object.fromEntries(Object.entries(state.romance).map(([k, v]) => [k, v.affection])) }, map: this.map.id, x: this.player.tx, y: this.player.ty, dir: this.player.dir, moving: this.player.moving, locked: this.locked, dialogue: this.dialogue.active, menu: this.dialogue.hasMenu }),
       maps: Object.keys(MAPS),
+      grid: () => ({ w: this.map.w, h: this.map.h, solid: this.solid, npcs: this.npcs.map((n) => ({ x: n.actor.tx, y: n.actor.ty })) }),
       spawnOf: (id: string) => MAPS[id].spawn ?? { x: Math.floor(MAPS[id].w / 2), y: MAPS[id].h - 3, dir: 'up' },
       giveStarter: (id: string, lv = 5) => { if (!state.party.length) state.giveStarter(id, lv); },
       wild: (sp: string, lv: number) => this.startBattle({ foeParty: [createCreature(sp, lv)], terrain: this.terrain() }),
@@ -400,9 +402,7 @@ export class OverworldScene extends Phaser.Scene {
       return;
     }
     if (name === 'badge' && arg) {
-      if (!state.badges.includes(arg)) state.badges.push(arg);
-      state.setFlag(`badge.${arg}`);
-      state.setFlag(state.badges.length >= 2 ? 'badge.second' : 'badge.first');
+      state.awardBadge(arg);
       sfx('badge');
       this.ui.toast(`Got the ${BADGES.find((b) => b.id === arg)?.name ?? 'badge'}!`);
       await new Promise<void>((r) => this.time.delayedCall(1600, () => r()));
