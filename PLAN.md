@@ -7,7 +7,7 @@ All creatures, characters, places, art, and audio are original.
 
 | Concern | Choice |
 |---|---|
-| Engine | Phaser 3 (Arcade physics NOT used; grid movement is custom) |
+| Engine | Phaser 3.90 (pinned; v4 is not used). Grid movement is custom, no Arcade physics |
 | Language | TypeScript (strict) |
 | Bundler | Vite |
 | Render | Internal resolution **240×160** (GBA), `pixelArt: true`, `roundPixels`, integer scale via `Scale.FIT` + custom integer zoom snap in `main.ts` |
@@ -103,8 +103,8 @@ Hunt-mon/
 
 Each milestone ends with: run game (Playwright smoke), zero console errors/warnings, update this list, summarize what's playable, commit + push.
 
-- [ ] **M0** Scaffold: Vite+TS+Phaser, integer-scale config, Boot scene, texture factory, input manager
-- [ ] **M1** Overworld: grid movement (walk/run), camera, collision, warps + fades, NPC idle/walk, signs/objects
+- [x] **M0** Scaffold: Vite+TS+Phaser, integer-scale config, Boot scene, texture factory, input manager
+- [x] **M1** Overworld: grid movement (walk/run), camera, collision, warps + fades, NPC idle/walk, signs/objects
 - [ ] **M2** Dialogue: typewriter, portraits, choices, flags/vars, affection + hearts
 - [ ] **M3** Battle: engine + type chart + moves/PP/accuracy/crits/stages/status, XP/level/learn/evolve, wild grass + trainer LoS
 - [ ] **M4** Collection & menus: catching, party 6, box, dex, bag, shop, heal center, badges, options, 3-slot save/load

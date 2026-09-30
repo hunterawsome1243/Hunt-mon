@@ -1,0 +1,4 @@
+{
+  "_comment": "Drop PNG sprite sheets into this folder and list them here to override generated art. Key = texture key (e.g. c_hero_a, t_grass). Sheets are laid out left-to-right in frames of frameWidth x frameHeight.",
+  "textures": {}
+}

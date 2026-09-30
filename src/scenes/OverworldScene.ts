@@ -1,0 +1,257 @@
+import Phaser from 'phaser';
+import { DEPTH, DIRS, Dir, TILE, VIEW_H, VIEW_W } from '../config';
+import { TILES } from '../data/art/tiles';
+import { MAPS, START } from '../data/maps';
+import type { MapDef, NpcDef } from '../data/types';
+import { Actor } from '../engine/grid/Actor';
+import { InputManager } from '../engine/input/InputManager';
+import { DialogueBox, textStyle } from '../engine/ui/DialogueBox';
+import { rng } from '../engine/rng';
+
+interface AnimTile { sprite: Phaser.GameObjects.Image; key: string; frames: number; ms: number }
+interface NpcRt { def: NpcDef; actor: Actor; homeX: number; homeY: number; timer: number }
+interface SceneData { map?: string; x?: number; y?: number; dir?: Dir }
+
+export class OverworldScene extends Phaser.Scene {
+  private input2!: InputManager;
+  private map!: MapDef;
+  private player!: Actor;
+  private npcs: NpcRt[] = [];
+  private solid: boolean[][] = [];
+  private grass: boolean[][] = [];
+  private animTiles: AnimTile[] = [];
+  private dialogue!: DialogueBox;
+  private locked = false;
+  private turnWait = 0;
+  private chain = false;
+  private camX = 0; private camY = 0;
+  private grassOverlay!: Phaser.GameObjects.Image;
+  private mapLabel!: Phaser.GameObjects.Text;
+  private tileClock = 0;
+  private seed: SceneData = {};
+
+  constructor() { super('overworld'); }
+
+  init(data: SceneData): void { this.seed = data ?? {}; }
+
+  create(): void {
+    const id = this.seed.map ?? START.map;
+    this.map = MAPS[id];
+    const sx = this.seed.x ?? START.x, sy = this.seed.y ?? START.y, sd = this.seed.dir ?? START.dir;
+    this.input2 = new InputManager(this);
+    this.animTiles = []; this.npcs = []; this.locked = false; this.turnWait = 0; this.chain = false;
+    this.buildMap();
+    this.dialogue = new DialogueBox(this);
+
+    this.player = new Actor(this, 'player', 'c_hero_a', sx, sy, sd);
+    this.player.onArrive = (a) => this.onPlayerArrive(a);
+
+    for (const def of this.map.npcs) {
+      const actor = new Actor(this, def.id, `c_${def.look}`, def.x, def.y, def.dir);
+      this.npcs.push({ def, actor, homeX: def.x, homeY: def.y, timer: 800 + rng.int(0, 2000) });
+    }
+
+    this.grassOverlay = this.add.image(0, 0, 't_tall_grass', 0).setOrigin(0, 0).setVisible(false).setDepth(DEPTH.entity + 500);
+    this.grassOverlay.setCrop(0, 8, TILE, 8);
+
+    // Area name banner
+    this.mapLabel = this.add.text(VIEW_W / 2, 6, this.map.name, textStyle('#fdf6e3')).setOrigin(0.5, 0).setScrollFactor(0).setDepth(DEPTH.ui + 5).setAlpha(0);
+    this.mapLabel.setShadow(1, 1, '#1b1530', 0, false, true);
+    this.tweens.add({ targets: this.mapLabel, alpha: 1, y: 8, duration: 300, hold: 1400, yoyo: true, ease: 'Sine.easeOut' });
+
+    this.cameras.main.setBackgroundColor(this.map.indoor ? '#0b0910' : '#101820');
+    this.centerCamera(true);
+    this.cameras.main.fadeIn(280, 0, 0, 0);
+    (window as unknown as { __hunt?: unknown }).__hunt = this.debugApi();
+  }
+
+  private debugApi() {
+    return {
+      state: () => ({ map: this.map.id, x: this.player.tx, y: this.player.ty, dir: this.player.dir, moving: this.player.moving, locked: this.locked, dialogue: this.dialogue.active }),
+      maps: Object.keys(MAPS),
+    };
+  }
+
+  // ---------- map construction ----------
+  private buildMap(): void {
+    const { w, h } = this.map;
+    // Static tiles are collected per layer and baked one layer at a time. (Interleaving begin/endDraw across
+    // RenderTextures corrupts them, and an RT that never receives a draw renders as an opaque smear.)
+    type Layer = 'under' | 'detail' | 'above';
+    const draws: Record<Layer, Array<[string, number, number]>> = { under: [], detail: [], above: [] };
+    this.solid = Array.from({ length: h }, () => Array<boolean>(w).fill(false));
+    this.grass = Array.from({ length: h }, () => Array<boolean>(w).fill(false));
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+      const g = this.map.ground[y][x];
+      const gd = TILES[g];
+      this.placeTile(draws.under, g, x, y, DEPTH.ground + 0.1);
+      if (gd.solid) this.solid[y][x] = true;
+      if (gd.grass) this.grass[y][x] = true;
+      const d = this.map.deco[y][x];
+      if (d) {
+        const dd = TILES[d];
+        if (dd.solid) this.solid[y][x] = true;
+        this.placeTile(draws[dd.above ? 'above' : 'detail'], d, x, y, dd.above ? DEPTH.above + 0.1 : DEPTH.detail + 0.1);
+      }
+    }
+    const depths: Record<Layer, number> = { under: DEPTH.ground, detail: DEPTH.detail, above: DEPTH.above };
+    for (const k of ['under', 'detail', 'above'] as Layer[]) {
+      if (!draws[k].length) continue;
+      const rt = this.add.renderTexture(0, 0, w * TILE, h * TILE).setOrigin(0, 0).setDepth(depths[k]);
+      rt.beginDraw();
+      for (const [key, x, y] of draws[k]) rt.batchDrawFrame(key, 0, x, y);
+      rt.endDraw();
+    }
+    for (const s of this.map.signs) this.solid[s.y][s.x] = true;
+  }
+
+  private placeTile(out: Array<[string, number, number]>, name: string, x: number, y: number, depth: number): void {
+    const def = TILES[name];
+    const key = `t_${name}`;
+    if (def.frames > 1) {
+      const img = this.add.image(x * TILE, y * TILE, key, 0).setOrigin(0, 0).setDepth(depth);
+      this.animTiles.push({ sprite: img, key, frames: def.frames, ms: def.animMs ?? 300 });
+    } else out.push([key, x * TILE, y * TILE]);
+  }
+
+  // ---------- helpers ----------
+  private blocked(x: number, y: number, self?: Actor): boolean {
+    if (x < 0 || y < 0 || x >= this.map.w || y >= this.map.h) return true;
+    if (this.solid[y][x]) return true;
+    const all = [this.player, ...this.npcs.map((n) => n.actor)];
+    return all.some((a) => a !== self && ((a.tx === x && a.ty === y) || (a.moving && a.destX === x && a.destY === y)));
+  }
+
+  warpTo(mapId: string, x: number, y: number, dir: Dir = 'down'): void {
+    if (this.locked && this.cameras.main.fadeEffect.isRunning) return;
+    this.locked = true;
+    this.cameras.main.fadeOut(220, 0, 0, 0);
+    this.cameras.main.once('camerafadeoutcomplete', () => this.scene.restart({ map: mapId, x, y, dir }));
+  }
+
+  private onPlayerArrive(a: Actor): void {
+    this.chain = true;
+    const w = this.map.warps.find((wp) => wp.x === a.tx && wp.y === a.ty);
+    if (w) { this.warpTo(w.to, w.tx, w.ty, w.dir); return; }
+    if (this.grass[a.ty][a.tx]) this.rustle(a.tx, a.ty);
+  }
+
+  private rustle(tx: number, ty: number): void {
+    for (let i = 0; i < 5; i++) {
+      const p = this.add.rectangle(tx * TILE + 8 + rng.int(-4, 4), ty * TILE + 12, 2, 2, rng.chance(0.5) ? 0x7fd05e : 0x3a7f32).setDepth(DEPTH.fx);
+      this.tweens.add({ targets: p, x: p.x + rng.int(-9, 9), y: p.y - rng.int(5, 12), alpha: 0, duration: 380, ease: 'Quad.easeOut', onComplete: () => p.destroy() });
+    }
+  }
+
+  private facingTile(): { x: number; y: number } {
+    return { x: this.player.tx + DIRS[this.player.dir].x, y: this.player.ty + DIRS[this.player.dir].y };
+  }
+
+  private async interact(): Promise<void> {
+    const t = this.facingTile();
+    const npc = this.npcs.find((n) => !n.actor.moving && n.actor.tx === t.x && n.actor.ty === t.y);
+    const sign = this.map.signs.find((s) => s.x === t.x && s.y === t.y);
+    if (!npc && !sign) return;
+    this.locked = true;
+    if (npc) {
+      const opp: Record<Dir, Dir> = { up: 'down', down: 'up', left: 'right', right: 'left' };
+      npc.actor.face(opp[this.player.dir]);
+      await this.dialogue.say(npc.def.lines);
+    } else if (sign) await this.dialogue.say(sign.lines);
+    this.locked = false;
+  }
+
+  // ---------- frame loop ----------
+  update(_time: number, dt: number): void {
+    dt = Math.min(dt, 50);
+    this.input2.poll();
+    const dbg = this.game.registry.get('debugOpen') === true;
+    this.dialogue.update(dt);
+    this.updateTiles(dt);
+
+    if (this.dialogue.active) {
+      if (this.input2.just('confirm') || this.input2.just('back')) this.dialogue.advance();
+    } else if (!this.locked && !dbg) {
+      this.handlePlayer(dt);
+    }
+    this.player.update(dt);
+    this.updateNpcs(dt);
+    this.updateGrassOverlay();
+    this.centerCamera(false, dt);
+  }
+
+  private handlePlayer(dt: number): void {
+    const p = this.player;
+    if (p.moving) return;
+    if (this.input2.just('confirm')) { void this.interact(); return; }
+    const d = this.input2.heldDir();
+    if (!d) { this.chain = false; this.turnWait = 0; return; }
+    if (d !== p.dir && !this.chain) {
+      // a quick tap only turns in place; holding continues into a step
+      p.face(d);
+      this.turnWait = 90;
+      this.chain = false;
+    }
+    if (this.turnWait > 0) { this.turnWait -= dt; if (this.turnWait > 0) return; }
+    p.face(d);
+    const nx = p.tx + DIRS[d].x, ny = p.ty + DIRS[d].y;
+    if (this.blocked(nx, ny, p)) { this.chain = false; return; }
+    p.step(d, this.input2.down('run'));
+    this.chain = false;
+  }
+
+  private updateNpcs(dt: number): void {
+    const frozen = this.locked || this.dialogue.active;
+    for (const n of this.npcs) {
+      n.actor.update(dt);
+      if (n.actor.moving || frozen || n.def.move === 'idle' || !n.def.move) continue;
+      n.timer -= dt;
+      if (n.timer > 0) continue;
+      n.timer = 900 + rng.int(0, 2600);
+      const d = rng.pick(['up', 'down', 'left', 'right'] as Dir[]);
+      if (n.def.move === 'look') { n.actor.face(d); continue; }
+      const nx = n.actor.tx + DIRS[d].x, ny = n.actor.ty + DIRS[d].y;
+      const r = n.def.radius ?? 2;
+      n.actor.face(d);
+      if (Math.abs(nx - n.homeX) > r || Math.abs(ny - n.homeY) > r || this.blocked(nx, ny, n.actor)) continue;
+      // also don't walk onto warps
+      if (this.map.warps.some((w) => w.x === nx && w.y === ny)) continue;
+      n.actor.step(d, false);
+    }
+  }
+
+  private updateTiles(dt: number): void {
+    this.tileClock += dt;
+    for (const a of this.animTiles) {
+      const f = Math.floor(this.tileClock / a.ms) % a.frames;
+      a.sprite.setFrame(f);
+    }
+  }
+
+  private updateGrassOverlay(): void {
+    const p = this.player;
+    const on = !p.moving && this.grass[p.ty][p.tx];
+    this.grassOverlay.setVisible(on);
+    if (on) {
+      this.grassOverlay.setPosition(p.tx * TILE, p.ty * TILE);
+      this.grassOverlay.setFrame(Math.floor(this.tileClock / 260) % 4);
+      this.grassOverlay.setCrop(0, 8, TILE, 8);
+      this.grassOverlay.y = p.ty * TILE;
+    }
+  }
+
+  private centerCamera(snap: boolean, dt = 16): void {
+    const cam = this.cameras.main;
+    const mw = this.map.w * TILE, mh = this.map.h * TILE;
+    let tx = this.player.px - VIEW_W / 2;
+    let ty = this.player.py - TILE / 2 - VIEW_H / 2;
+    tx = mw <= VIEW_W ? -(VIEW_W - mw) / 2 : Phaser.Math.Clamp(tx, 0, mw - VIEW_W);
+    ty = mh <= VIEW_H ? -(VIEW_H - mh) / 2 : Phaser.Math.Clamp(ty, 0, mh - VIEW_H);
+    if (snap) { this.camX = tx; this.camY = ty; }
+    else {
+      const k = 1 - Math.pow(0.0005, dt / 1000); // frame-rate independent ease
+      this.camX += (tx - this.camX) * k; this.camY += (ty - this.camY) * k;
+    }
+    cam.setScroll(Math.round(this.camX), Math.round(this.camY));
+  }
+}
