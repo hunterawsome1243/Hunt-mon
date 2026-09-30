@@ -136,6 +136,7 @@ export class OverworldScene extends Phaser.Scene {
       hpAll: (hp: number) => { state.party.forEach((c) => { c.hp = Math.min(c.hp, hp); }); },
       money: () => state.money,
       flag: (k: string) => state.flag(k),
+      item: (id: string) => state.bag[id] ?? 0,
       setFlag: (k: string, v = true) => state.setFlag(k, v),
       setAff: (npc: string, v: number) => { state.rec(npc).affection = v; state.rec(npc).pending = []; },
       warp: (map: string, x: number, y: number, dir: Dir = 'down') => this.warpTo(map, x, y, dir),
