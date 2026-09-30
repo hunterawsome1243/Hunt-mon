@@ -35,10 +35,10 @@ try {
   await sleep(200);
   await page.screenshot({ path: 'shots/21_name.png' });
   // move cursor to OK (bottom row, right) and confirm
-  await press('ArrowUp'); await press('ArrowRight'); await press('z', 400);
+  await press('ArrowUp'); await press('ArrowRight'); await press('Enter', 400);
   await sleep(300);
   await page.screenshot({ path: 'shots/22_look.png' });
-  await press('ArrowRight'); await press('z', 400);
+  await press('ArrowRight'); await press('Enter', 400);
   await page.waitForFunction(() => window.__hunt, null, { timeout: 15000 });
   await sleep(1800);
   let s = await st();

@@ -78,7 +78,7 @@ export class TitleScene extends Phaser.Scene {
   private makeLogo(): Phaser.GameObjects.Container {
     const mk = (s: string, size: number, color: string, ox = 0, oy = 0) => this.add.text(ox, oy, s, { fontFamily: FONT, fontSize: `${size}px`, color }).setOrigin(0.5, 0);
     const c = this.add.container(VIEW_W / 2, 28, [mk('HUNT-MON', 24, '#1b1530', 2, 3), mk('HUNT-MON', 24, '#e8623a', 0, 0), mk('HUNT-MON', 24, '#f8d038', 0, -1).setAlpha(0.35),
-      mk('a creature-collecting adventure', 8, '#d8d0f0', 0, 30)]).setDepth(DEPTH.ui - 10);
+      mk('a creature-collecting tale', 8, '#d8d0f0', 0, 30)]).setDepth(DEPTH.ui - 10);
     return c;
   }
 
@@ -86,7 +86,7 @@ export class TitleScene extends Phaser.Scene {
   private async main(): Promise<void> {
     for (;;) {
       const has = saves.summaries().some((s) => !!s);
-      const i = await this.menu.open({ x: 80, y: 96, w: 80, rows: [{ label: 'New Game' }, { label: 'Continue', disabled: !has }, { label: 'Options' }], rowH: 13, cancelable: false });
+      const i = await this.menu.open({ x: 72, y: 96, w: 96, rows: [{ label: 'New Game' }, { label: 'Continue', disabled: !has }, { label: 'Options' }], rowH: 13, cancelable: false });
       if (i === 0) { if (await this.newGame()) return; }
       else if (i === 1) { if (await this.continueGame()) return; }
       else if (i === 2) await this.options();
@@ -116,6 +116,7 @@ export class TitleScene extends Phaser.Scene {
     return new Promise((resolve) => {
       const layer = this.add.container(0, 0).setDepth(DEPTH.ui - 40);
       layer.add(backdrop(this, 'YOUR NAME?'));
+      this.logo.setVisible(false); this.input2.textMode = true;
       const nameT = text(this, 120, 24, '', COL.ink).setOrigin(0.5, 0).setScale(1.5);
       layer.add(win(this, 40, 19, 160, 26)); layer.add(nameT);
       const grid = this.add.container(0, 0); layer.add(grid);
@@ -137,14 +138,13 @@ export class TitleScene extends Phaser.Scene {
           if (active) grid.add(this.add.rectangle(px - 3, ay - 2, 50, 12, 0xc8452f).setOrigin(0, 0));
           grid.add(text(this, px, ay, l, active ? '#ffffff' : COL.ink));
         });
-        grid.add(text(this, 120, 148, 'Z: pick   X: back   (keyboard works too)', '#b8a8d8').setOrigin(0.5, 0).setScale(0.75));
+        grid.add(text(this, 120, 148, 'Enter: pick  Esc: back  (type too!)', '#b8a8d8').setOrigin(0.5, 0).setScale(0.75));
       };
       draw();
-      const done = (v: string | null): void => { kb?.off('keydown', onKey); this.handler = null; layer.destroy(); resolve(v); };
+      const done = (v: string | null): void => { this.input2.textMode = false; this.logo.setVisible(true); kb?.off('keydown', onKey); this.handler = null; layer.destroy(); resolve(v); };
       const commit = (): void => { if (name.trim().length) done(name.trim()); else sfx('deny'); };
       const onKey = (e: KeyboardEvent): void => {
         if (/^[a-zA-Z]$/.test(e.key) && name.length < 8) { name += e.key; draw(); sfx('blip'); }
-        else if (e.key === 'Backspace') { name = name.slice(0, -1); draw(); }
       };
       const kb = this.input.keyboard;
       kb?.on('keydown', onKey);
@@ -169,6 +169,7 @@ export class TitleScene extends Phaser.Scene {
     return new Promise((resolve) => {
       const layer = this.add.container(0, 0).setDepth(DEPTH.ui - 40);
       layer.add(backdrop(this, 'CHOOSE YOUR LOOK'));
+      this.logo.setVisible(false);
       const looks = ['hero_a', 'hero_b'];
       let sel = 0;
       const dyn = this.add.container(0, 0); layer.add(dyn);
@@ -186,8 +187,8 @@ export class TitleScene extends Phaser.Scene {
       draw();
       this.handler = (im) => {
         if (im.just('left') || im.just('right')) { sel = 1 - sel; draw(); sfx('cursor'); }
-        else if (im.just('confirm')) { this.handler = null; layer.destroy(); resolve(looks[sel]); }
-        else if (im.just('back')) { this.handler = null; layer.destroy(); resolve(null); }
+        else if (im.just('confirm')) { this.handler = null; layer.destroy(); this.logo.setVisible(true); resolve(looks[sel]); }
+        else if (im.just('back')) { this.handler = null; layer.destroy(); this.logo.setVisible(true); resolve(null); }
       };
     });
   }
@@ -196,13 +197,14 @@ export class TitleScene extends Phaser.Scene {
     return new Promise((resolve) => {
       const layer = this.add.container(0, 0).setDepth(DEPTH.ui - 40);
       layer.add(backdrop(this, 'CONTINUE'));
+      this.logo.setVisible(false);
       const dyn = this.add.container(0, 0); layer.add(dyn);
       let sel = 0;
       const sums = saves.summaries();
       sel = Math.max(0, sums.findIndex((s) => !!s));
       const draw = (): void => { dyn.removeAll(true); sums.forEach((s, i) => drawSlot(this, dyn, i, s, i === sel)); };
       draw();
-      const close = (v: boolean): void => { this.handler = null; layer.destroy(); resolve(v); };
+      const close = (v: boolean): void => { this.handler = null; layer.destroy(); this.logo.setVisible(true); resolve(v); };
       this.handler = (im) => {
         if (im.just('back')) close(false);
         else if (im.just('up')) { sel = (sel + 2) % 3; draw(); }

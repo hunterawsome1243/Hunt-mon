@@ -1,5 +1,7 @@
 import Phaser from 'phaser';
 
+const isLetter = (k: Phaser.Input.Keyboard.Key): boolean => k.keyCode >= 65 && k.keyCode <= 90;
+
 export type Action = 'up' | 'down' | 'left' | 'right' | 'confirm' | 'back' | 'run' | 'menu' | 'debug';
 
 const KEYS: Record<Action, string[]> = {
@@ -20,6 +22,8 @@ export class InputManager {
   private pressed = new Set<Action>();
   private prevKey = new Set<Action>();
   private queued = new Set<Action>();
+  /** While true, letter keys (WASD/Z/X/M) are ignored so the player can type text. Arrows/Enter/Esc still work. */
+  textMode = false;
 
   constructor(private scene: Phaser.Scene) {
     const kb = scene.input.keyboard;
@@ -28,7 +32,7 @@ export class InputManager {
       const keys = KEYS[a].map((k) => kb.addKey(k === 'BACKTICK' ? 192 : k, false));
       this.keys.set(a, keys);
       // Event-based edge detection so taps shorter than a frame are never lost.
-      for (const k of keys) k.on('down', () => this.queued.add(a));
+      for (const k of keys) k.on('down', () => { if (!(this.textMode && isLetter(k))) this.queued.add(a); });
     }
     kb.addCapture('UP,DOWN,LEFT,RIGHT,SPACE,TAB');
   }
@@ -70,7 +74,7 @@ export class InputManager {
   }
 
   private keyDown(a: Action): boolean {
-    return (this.keys.get(a) ?? []).some((k) => k.isDown);
+    return (this.keys.get(a) ?? []).some((k) => k.isDown && !(this.textMode && isLetter(k)));
   }
   down(a: Action): boolean { return this.keyDown(a) || this.padDown.has(a); }
   /** True only on the frame the action was first pressed. */
