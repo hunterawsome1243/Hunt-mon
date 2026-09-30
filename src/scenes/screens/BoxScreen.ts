@@ -39,5 +39,5 @@ export function boxScreen(m: MenuScene): Promise<void> {
         }
       }
     }
-  });
+  }, 'box');
 }

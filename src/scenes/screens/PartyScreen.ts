@@ -11,8 +11,8 @@ export interface PartyOpts {
   allow?: (c: Creature, i: number) => boolean;
 }
 
-const SLOT = { w: 114, h: 43 };
-const pos = (i: number): { x: number; y: number } => ({ x: 4 + (i % 2) * 118, y: 19 + Math.floor(i / 2) * 46 });
+const SLOT = { w: 114, h: 41 };
+const pos = (i: number): { x: number; y: number } => ({ x: 4 + (i % 2) * 118, y: 19 + Math.floor(i / 2) * 43 });
 const STATUS_COL: Record<string, number> = { burn: 0xe8623a, poison: 0xa05ac0, sleep: 0x8a8aa0, paralysis: 0xd8b020 };
 
 /** Party grid. Browse mode offers Summary / Switch; pick mode returns the chosen index (or -1). */
@@ -25,7 +25,7 @@ export function partyScreen(m: MenuScene, o: PartyOpts): Promise<number> {
     let switchFrom = -1;
     const slotLayer = m.add.container(0, 0);
     const cursor = m.add.graphics();
-    const hint = text(m, 6, 149, '', '#b8a8d8');
+    const hint = text(m, 6, 150, '', '#b8a8d8').setScale(0.85);
     layer.add([slotLayer, cursor, hint]);
     m.tweens.add({ targets: cursor, alpha: 0.35, duration: 380, yoyo: true, repeat: -1 });
 
@@ -40,13 +40,12 @@ export function partyScreen(m: MenuScene, o: PartyOpts): Promise<number> {
         const dim = o.mode === 'pick' && o.allow && !o.allow(c, i);
         const col = c.hp <= 0 ? COL.bad : dim ? '#9a8fb0' : COL.ink;
         slotLayer.add(m.add.image(x + 18, y + 22, `mon_i_${c.species}`).setOrigin(0.5).setAlpha(dim || c.hp <= 0 ? 0.55 : 1));
-        slotLayer.add(text(m, x + 36, y + 6, nameOf(c).slice(0, 8), col));
-        slotLayer.add(text(m, x + SLOT.w - 7, y + 6, `Lv${c.level}`, col).setOrigin(1, 0));
+        slotLayer.add(text(m, x + 36, y + 5, nameOf(c).slice(0, 9), col));
+        slotLayer.add(text(m, x + 36, y + 17, `Lv${c.level}`, col).setScale(0.85));
         const bar = m.add.graphics();
-        drawBar(bar, x + 50, y + 20, 56, c.hp / maxHp(c));
+        drawBar(bar, x + 64, y + 18, 44, c.hp / maxHp(c));
         slotLayer.add(bar);
-        slotLayer.add(text(m, x + 36, y + 19, 'HP', COL.gold).setScale(0.75));
-        slotLayer.add(text(m, x + SLOT.w - 7, y + 28, `${c.hp}/${maxHp(c)}`, col).setOrigin(1, 0));
+        slotLayer.add(text(m, x + SLOT.w - 7, y + 28, `${c.hp}/${maxHp(c)}`, col).setOrigin(1, 0).setScale(0.85));
         if (c.status) {
           const b = m.add.graphics(); b.fillStyle(STATUS_COL[c.status], 1).fillRect(x + 37, y + 29, 24, 8);
           slotLayer.add(b);
@@ -94,5 +93,5 @@ export function partyScreen(m: MenuScene, o: PartyOpts): Promise<number> {
         })();
       };
     });
-  });
+  }, 'party');
 }

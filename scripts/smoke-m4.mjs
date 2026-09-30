@@ -55,26 +55,30 @@ try {
   await press('m', 500);
   if (!(await untilMenuScene(true))) fail('pause menu did not open');
   await sleep(400); await page.screenshot({ path: 'shots/23_pause.png' });
-  // Dex
-  await press('z', 600); await page.screenshot({ path: 'shots/24_dex.png' }); await press('x', 400);
-  // Party -> summary
-  await press('ArrowDown'); await press('z', 600); await page.screenshot({ path: 'shots/25_party.png' });
-  await press('z', 400); await press('z', 600); await page.screenshot({ path: 'shots/26_summary.png' });
+  const cur = () => page.evaluate(() => window.__menuScene?.current);
+  const waitCur = async (name, ms = 5000) => { for (let i = 0; i < ms / 100 && (await cur()) !== name; i++) await sleep(100); if ((await cur()) !== name) fail(`expected menu screen "${name}" but got "${await cur()}"`); };
+  const backTo = async (name) => { for (let i = 0; i < 8 && (await cur()) !== name; i++) await press('x', 350); };
+  let pauseIdx = 0;
+  const openPause = async (idx, name, shot) => {
+    while (pauseIdx < idx) { await press('ArrowDown', 120); pauseIdx++; }
+    while (pauseIdx > idx) { await press('ArrowUp', 120); pauseIdx--; }
+    await press('z', 500); await waitCur(name); await sleep(300);
+    if (shot) await page.screenshot({ path: `shots/${shot}.png` });
+  };
+  await waitCur('pause');
+  await openPause(0, 'dex', '24_dex'); await backTo('pause');
+  await openPause(1, 'party', '25_party');
+  await press('z', 400); await press('z', 500); await waitCur('summary'); await page.screenshot({ path: 'shots/26_summary.png' });
   await press('ArrowRight', 400); await page.screenshot({ path: 'shots/27_summary_moves.png' });
-  await press('x', 300); await press('x', 500);
-  // Bag
-  await press('ArrowDown'); await press('z', 600); await page.screenshot({ path: 'shots/28_bag.png' }); await press('x', 400);
-  // Card
-  await press('ArrowDown'); await press('z', 600); await page.screenshot({ path: 'shots/29_card.png' }); await press('x', 400);
-  // Options: flip text speed then back
-  await press('ArrowDown'); await press('ArrowDown'); await press('z', 600);
-  await press('ArrowRight', 200); await page.screenshot({ path: 'shots/30_options.png' }); await press('x', 400);
-  // Save to slot 1
-  await press('ArrowUp'); await press('z', 600); await press('z', 400); await sleep(1500);
+  await backTo('pause');
+  await openPause(2, 'bag', '28_bag'); await backTo('pause');
+  await openPause(3, 'card', '29_card'); await backTo('pause');
+  await openPause(5, 'options', '30_options'); await press('ArrowRight', 200); await backTo('pause');
+  await openPause(4, 'save', '31_save_slots'); await press('z', 600); await press('z', 300); await sleep(1500);
   await page.screenshot({ path: 'shots/31_save.png' });
   const slotSaved = await page.evaluate(() => !!localStorage.getItem('huntmon.save.1'));
   if (!slotSaved) fail('save slot 1 empty after saving');
-  await press('x', 400); await press('x', 400);
+  await backTo('pause');
   // close pause menu
   for (let i = 0; i < 4 && (await active('menu')); i++) await press('x', 400);
   if (await active('menu')) fail('menu did not close');

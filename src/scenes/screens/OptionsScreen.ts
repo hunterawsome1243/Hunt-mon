@@ -45,5 +45,5 @@ export function optionsScreen(m: MenuScene): Promise<void> {
         else if (im.just('right') || im.just('confirm')) { rows[sel].step(1); render(); }
       };
     });
-  });
+  }, 'options');
 }

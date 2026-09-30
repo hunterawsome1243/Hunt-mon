@@ -66,5 +66,5 @@ export function summaryScreen(m: MenuScene, start: number): Promise<void> {
         else if (page === 1 && im.just('down')) { mv = (mv + 1) % party[idx].moves.length; render(); }
       };
     });
-  });
+  }, 'summary');
 }

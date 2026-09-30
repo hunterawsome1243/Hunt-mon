@@ -88,5 +88,5 @@ export function bagScreen(m: MenuScene, o: { mode: 'field' | 'gift' }): Promise<
         }
       };
     });
-  });
+  }, 'bag');
 }

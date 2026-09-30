@@ -25,6 +25,6 @@ export function cardScreen(m: MenuScene): Promise<void> {
       layer.add(text(m, x + 20, y + 4, has ? b.name.split(' ')[0] : '???', has ? COL.ink : COL.dim).setScale(0.8));
     });
     await m.waitBack();
-  });
+  }, 'card');
 }
 import Phaser from 'phaser';

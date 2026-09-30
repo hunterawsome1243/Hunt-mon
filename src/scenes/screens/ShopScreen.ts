@@ -33,7 +33,7 @@ function askQty(m: MenuScene, name: string, unit: number, max: number, verb: str
         else if (im.just('back')) { m.handler = null; res(0); }
       };
     });
-  });
+  }, 'qty');
 }
 
 export function shopScreen(m: MenuScene, shopId: string): Promise<void> {
@@ -83,5 +83,5 @@ export function shopScreen(m: MenuScene, shopId: string): Promise<void> {
       }
     }
     m.box.hide();
-  });
+  }, 'shop');
 }

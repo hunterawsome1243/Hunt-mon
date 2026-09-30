@@ -55,5 +55,5 @@ export function saveScreen(m: MenuScene, _mode: 'save', pos: PlayerPos): Promise
         }
       };
     });
-  });
+  }, 'save');
 }

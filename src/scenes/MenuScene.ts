@@ -32,6 +32,8 @@ export class MenuScene extends Phaser.Scene {
   box!: DialogueBox;
   /** screens set this to receive raw input when no ListMenu is open */
   handler: ((im: InputManager, dt: number) => void) | null = null;
+  /** name of the screen currently shown (used by tests/tools) */
+  current = '';
   private req!: MenuRequest;
   private result: MenuResult = {};
 
@@ -45,6 +47,7 @@ export class MenuScene extends Phaser.Scene {
     this.box = new DialogueBox(this);
     this.box.charsPerSec = [25, 45, 90][state.options.textSpeed];
     this.add.rectangle(0, 0, VIEW_W, VIEW_H, 0x000000, 0.45).setOrigin(0, 0).setDepth(-1);
+    (window as unknown as { __menuScene?: MenuScene }).__menuScene = this;
     void this.run().catch((e) => { console.error('menu crashed', e); this.close(); });
   }
 
@@ -78,9 +81,11 @@ export class MenuScene extends Phaser.Scene {
     });
   }
   /** Runs `fn` with a fresh set of display objects and destroys them afterwards. */
-  async screen<T>(build: (layer: Phaser.GameObjects.Container) => Promise<T>): Promise<T> {
+  async screen<T>(build: (layer: Phaser.GameObjects.Container) => Promise<T>, name = 'screen'): Promise<T> {
     const layer = this.add.container(0, 0).setDepth(DEPTH.ui - 50);
-    try { return await build(layer); } finally { layer.destroy(); this.handler = null; }
+    const prev = this.current;
+    this.current = name;
+    try { return await build(layer); } finally { layer.destroy(); this.handler = null; this.current = prev; }
   }
 
   close(): void {
@@ -113,6 +118,7 @@ export class MenuScene extends Phaser.Scene {
     this.tweens.add({ targets: info, alpha: 1, x: 4, duration: 180, ease: 'Back.easeOut' });
     let start = 0;
     for (;;) {
+      this.current = 'pause';
       const i = await this.pick({ x: 152, y: 18, w: 84, rows, rowH: 13, start, cancelable: true });
       if (i < 0 || i === 6) break;
       start = i;
