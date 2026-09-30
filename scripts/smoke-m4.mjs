@@ -43,7 +43,7 @@ try {
   await sleep(1800);
   let s = await st();
   if (s.map !== 'house_player') fail('new game did not start in the house: ' + JSON.stringify(s));
-  await press('z', 600); await press('z', 600); await press('z', 400); // dismiss welcome message
+  for (let i = 0; i < 20; i++) { const t = await st(); if (!t.locked && !t.dialogue) break; await press('z', 500); } // dismiss welcome message
   const name = await page.evaluate(() => window.__hunt.name());
   if (name !== 'Rae') fail('name entry failed: ' + name);
 
