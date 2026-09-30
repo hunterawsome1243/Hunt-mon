@@ -107,7 +107,7 @@ Each milestone ends with: run game (Playwright smoke), zero console errors/warni
 - [x] **M1** Overworld: grid movement (walk/run), camera, collision, warps + fades, NPC idle/walk, signs/objects
 - [x] **M2** Dialogue: typewriter, portraits, choices, flags/vars, affection + hearts
 - [x] **M3** Battle: engine + type chart + moves/PP/accuracy/crits/stages/status, XP/level/learn/evolve, wild grass + trainer LoS
-- [ ] **M4** Collection & menus: catching, party 6, box, dex, bag, shop, heal center, badges, options, 3-slot save/load
+- [x] **M4** Collection & menus: catching, party 6, box, dex, bag, shop, heal center, badges, options, 3-slot save/load
 - [ ] **M5** Content: all maps, 24+ creatures, trainers, gyms, rival ×3, main quest, 4 romances (content + rewards + date cutscene)
 - [ ] **M6** Polish: day/night + lights, weather, animated tiles, battle FX, chiptune music + SFX, UI juice
 - [ ] **M7** Debug menu (backtick), gamepad pass, softlock audit, full playthrough test, README

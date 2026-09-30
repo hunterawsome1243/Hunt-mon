@@ -50,6 +50,8 @@ export class DialogueRunner {
   /** Executes one node and returns the id of the next node (undefined = end). */
   private async node(g: DialogueGraph, id: string, node: DialogueNode): Promise<string | undefined> {
     if (node.cond && !evalCond(node.cond, this.s)) return node.next;
+    // Router nodes (no text, no choices) run their effects first so a command can set the state they branch on.
+    if (!node.text && !node.choices && node.effects) for (const e of node.effects) await this.effect(e, g);
     if (node.branch) {
       const hit = node.branch.find((b) => evalCond(b.cond, this.s));
       if (hit) return hit.next;
@@ -81,7 +83,8 @@ export class DialogueRunner {
       return c.next;
     }
     if (text) await this.ui.say({ ...base, text });
-    for (const e of node.effects ?? []) await this.effect(e, g);
+    if (text || node.choices) for (const e of node.effects ?? []) await this.effect(e, g);
+    else if (!node.branch) { /* effects already applied above for text-less nodes */ }
     return node.end ? undefined : node.next;
   }
 

@@ -91,9 +91,12 @@ try {
   await page.evaluate(() => window.__game.scene.getScene('overworld').warpTo('house_neighbor', 7, 3, 'left'));
   await sleep(1000);
   const pressUntil = async (cond, key = 'z', n = 14) => { for (let i = 0; i < n && !(await cond()); i++) await press(key, 350); };
-  await press('z'); await pressUntil(async () => (await st()).menu);
-  await press('z', 900); // Browse wares -> shop opens
+  const waitChoices = async (ms = 6000) => { for (let i = 0; i < ms / 100 && !(await st()).menu; i++) await sleep(100); return (await st()).menu; };
+  await press('z'); await pressUntil(async () => (await st()).menu); // intro lines -> hub
+  await press('z', 500); // Browse wares
+  await pressUntil(() => active('menu'), 'z', 10); // her line, then the shop opens
   if (!(await untilMenuScene(true))) fail('shop did not open');
+  await waitCur('shop');
   await sleep(500); await page.screenshot({ path: 'shots/32_shop.png' });
   await press('z', 500); // Buy
   await press('z', 500); // first item (potion)
@@ -102,21 +105,21 @@ try {
   const moneyAfter = await hunt('money');
   if (!(moneyAfter < moneyBefore)) fail(`buying did not cost money (${moneyBefore} -> ${moneyAfter})`);
   await press('x', 300); await press('x', 300); await press('x', 300); // leave lists and shop
-  await sleep(1200);
-  for (let i = 0; i < 4 && (await active('menu')); i++) await press('x', 400);
+  for (let i = 0; i < 6 && (await active('menu')); i++) await sleep(300);
   if (await active('menu')) fail('shop did not close');
+  await sleep(600);
 
   // gift: give a sweet bun (liked)
   await hunt('addItem', 'sweet_bun', 1);
-  await pressUntil(async () => (await st()).menu && !(await active('menu')), 'z', 4);
-  await sleep(300);
-  await press('ArrowDown'); await press('z', 900); // "Give a gift"
+  if (!(await waitChoices())) fail('hub menu did not return after shopping');
+  await press('ArrowDown'); await press('z', 500); // "Give a gift"
   if (await untilMenuScene(true)) {
+    await waitCur('bag');
     await sleep(400); await page.screenshot({ path: 'shots/33_gift.png' });
     await press('z', 900);
     await sleep(1500);
   } else fail('gift menu did not open');
-  await pressUntil(async () => (await st()).menu || !(await st()).dialogue, 'z', 10);
+  await waitChoices(9000);
   const aff = (await st()).aff.mira ?? 0;
   if (!(aff > 0)) fail('gift did not raise affection: ' + aff);
 

@@ -83,9 +83,9 @@ export class MenuScene extends Phaser.Scene {
   /** Runs `fn` with a fresh set of display objects and destroys them afterwards. */
   async screen<T>(build: (layer: Phaser.GameObjects.Container) => Promise<T>, name = 'screen'): Promise<T> {
     const layer = this.add.container(0, 0).setDepth(DEPTH.ui - 50);
-    const prev = this.current;
+    const prev = this.current, prevHandler = this.handler;
     this.current = name;
-    try { return await build(layer); } finally { layer.destroy(); this.handler = null; this.current = prev; }
+    try { return await build(layer); } finally { layer.destroy(); this.handler = prevHandler; this.current = prev; }
   }
 
   close(): void {
