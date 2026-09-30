@@ -19,7 +19,7 @@
 - 2-space indent, single quotes, semicolons, named exports.
 - IDs are lowercase snake_case strings (`ember_pup`, `quick_jab`); flags are `namespace.name` (`quest.rival1_done`).
 - Game constants (tile size, view size, speeds) live in `src/config.ts` only.
-- Comments explain *why*, not what. Keep files under ~400 lines; split otherwise.
+- Comments explain *why*, not what. Keep files under ~400 lines where practical (OverworldScene is the known exception); split otherwise.
 
 ## Rendering
 - Internal res 240×160, tile 16px, `pixelArt: true`, integer zoom, no fractional camera positions (round scroll).

@@ -110,7 +110,7 @@ Each milestone ends with: run game (Playwright smoke), zero console errors/warni
 - [x] **M4** Collection & menus: catching, party 6, box, dex, bag, shop, heal center, badges, options, 3-slot save/load
 - [x] **M5** Content: all maps, 24+ creatures, trainers, gyms, rival ×3, main quest, 4 romances (content + rewards + date cutscene)
 - [x] **M6** Polish: day/night + lights, weather, animated tiles, battle FX, chiptune music + SFX, UI juice
-- [ ] **M7** Debug menu (backtick), gamepad pass, softlock audit, full playthrough test, README
+- [x] **M7** Debug menu (backtick), gamepad pass, softlock audit, full playthrough test, README
 
 (Debug menu is scaffolded early — in M1 — and extended each milestone.)
 

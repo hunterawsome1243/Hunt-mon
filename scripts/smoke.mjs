@@ -16,6 +16,7 @@ try {
   const page = await browser.newPage({ viewport: { width: 720, height: 480 } });
   const logs = [];
   page.on('console', (m) => { if (['error', 'warning'].includes(m.type()) && !/GL Driver Message/.test(m.text())) logs.push(`${m.type()}: ${m.text()}`); });
+  page.on('crash', () => console.log('PAGE CRASH'));
   page.on('pageerror', (e) => logs.push('pageerror: ' + e.message));
   await page.goto(`http://localhost:${PORT}/?quick`);
   await page.waitForFunction(() => window.__hunt, null, { timeout: 15000 });
@@ -74,11 +75,14 @@ try {
   await untilMenu();
   const aff = (await st()).aff.mira;
   if (!(aff > 0)) fail('flirt did not raise affection: ' + aff);
+  console.log('[smoke] maps');
   // every map loads via warp
-  for (const m of await page.evaluate(() => window.__hunt.maps)) {
+  // date_* maps autorun cutscenes that lock input; smoke-m5 covers them
+  for (const m of (await page.evaluate(() => window.__hunt.maps)).filter((x) => !x.startsWith('date_'))) {
     await page.evaluate((id) => window.__game.scene.getScene('overworld').warpTo(id, 5, 5), m);
     await sleep(900);
     const s = await st();
+    console.log('  map', m);
     if (s.map !== m) fail(`warp to ${m} gave ${s.map}`);
     await page.screenshot({ path: `shots/map_${m}.png` });
   }
@@ -96,6 +100,7 @@ try {
     for (let i = 0; i < maxIter && (await battleActive()); i++) { await page.keyboard.press('z'); await sleep(120); }
     return !(await battleActive());
   };
+  console.log('[smoke] wild');
   // wild fight: spam confirm (Fight -> first move) until the battle ends
   await hunt('wild', 'nibbit', 2);
   await waitBattle();
@@ -104,6 +109,9 @@ try {
   if (!(await waitPhase('command'))) fail('never reached command menu');
   await page.screenshot({ path: 'shots/11_battle_menu.png' });
   await page.keyboard.press('z'); await sleep(500); await page.screenshot({ path: 'shots/11b_moves.png' });
+  // the first move is a status move (Growl): pick the first damaging one and leave the foe nearly dead so the spam loop ends
+  await page.evaluate(() => { window.__battle.battle.f.hp = 1; });
+  for (let k = await page.evaluate(() => window.__battle.firstDamagingMove()); k > 0; k--) { await page.keyboard.press('ArrowDown'); await sleep(120); }
   if (!(await finishBattle())) fail('wild battle did not finish');
   await sleep(1200);
   console.log('after wild battle:', JSON.stringify((await hunt('party'))[0]));
@@ -189,7 +197,7 @@ try {
   if ((await hunt('party')).some((c) => c.hp <= 0)) fail('party not healed after blackout');
   await browser.close();
   if (logs.length) { fail('console output:\n' + [...new Set(logs)].join('\n')); }
-} catch (e) { fail(String(e)); }
+} catch (e) { fail(String(e.stack ?? e)); }
 vite.kill();
 console.log(failed ? 'SMOKE FAILED' : 'SMOKE OK');
 process.exit(failed ? 1 : 0);
