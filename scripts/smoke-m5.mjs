@@ -121,6 +121,7 @@ try {
 
   // ---------------------------------------------------------------- finale
   log('finale');
+  await hunt('setLevel', 0, 55); // the last fights are long; keep the bot alive
   await warp('lumen_chamber', 7, 12, 'up');
   await page.keyboard.down('ArrowUp'); await sleep(500); await page.keyboard.up('ArrowUp');
   await advance(battleActive, 60); // up to rival 3
