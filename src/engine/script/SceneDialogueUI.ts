@@ -6,6 +6,7 @@ import { ROMANCE } from '../../data/romance/profiles';
 import type { Expression, FlirtReaction } from '../../data/types';
 import type { AffectionChange } from '../../game/romance/Affection';
 import { state } from '../../game/state/GameState';
+import { safeShake } from '../fx/Safe';
 import { DialogueBox, drawWindow, textStyle } from '../ui/DialogueBox';
 import type { DialogueUI } from './DialogueRunner';
 
@@ -58,7 +59,7 @@ export class SceneDialogueUI implements DialogueUI {
       const e = this.scene.add.image(x, y, 'ui_emote', frame).setDepth(DEPTH.fx).setAlpha(0);
       this.scene.tweens.add({ targets: e, alpha: 1, y: y - 8, duration: 220, ease: 'Back.easeOut',
         onComplete: () => this.scene.tweens.add({ targets: e, alpha: 0, duration: 260, delay: 520, onComplete: () => e.destroy() }) });
-      if (reaction === 'pushy') this.scene.cameras.main.shake(180, 0.004);
+      if (reaction === 'pushy') safeShake(this.scene.cameras.main, 180, 0.004);
       this.hooks.sfx?.('nope');
     }
   }

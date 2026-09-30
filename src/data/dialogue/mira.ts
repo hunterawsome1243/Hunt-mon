@@ -25,12 +25,21 @@ export const MIRA: DialogueGraph = {
       hub: true, speaker: M, portrait: 'neutral', text: 'What can I do for you?',
       choices: [
         { text: 'Browse wares', next: 'shop' },
+        { text: 'Give a gift', next: 'gift' },
         { text: 'Chat', next: 'chat' },
         { text: 'Flirt', next: 'flirt_gate' },
         { text: 'Leave', next: 'bye' },
       ],
     },
-    shop: { speaker: M, portrait: 'smug', text: "The shelves aren't stocked yet. Come back after the delivery, boss.", next: 'menu' },
+    shop: { speaker: M, portrait: 'smug', text: "Everything's priced fairly. Mostly. Take a look, boss.", effects: [{ cmd: 'shop', arg: 'mira' }], next: 'menu' },
+    gift: { effects: [{ cmd: 'gift', arg: 'mira' }], branch: [
+      { cond: { var: 'gift.result', op: '==', value: 1 }, next: 'gift_love' }, { cond: { var: 'gift.result', op: '==', value: 2 }, next: 'gift_like' },
+      { cond: { var: 'gift.result', op: '==', value: 3 }, next: 'gift_hate' }, { cond: { var: 'gift.result', op: '==', value: 4 }, next: 'gift_again' },
+    ], next: 'menu' },
+    gift_love: { speaker: M, portrait: 'blush', text: "You remembered what I like? Okay, now I'm the one who's flustered. Thank you, {player}.", next: 'menu' },
+    gift_like: { speaker: M, portrait: 'happy', text: "Oh, that's thoughtful. Thanks!", next: 'menu' },
+    gift_hate: { speaker: M, portrait: 'annoyed', text: "...Is this a joke? I'll put it... somewhere. Far away.", next: 'menu' },
+    gift_again: { speaker: M, portrait: 'smug', text: "One gift a day, romeo. I have to stretch these out.", next: 'menu' },
     chat: {
       speaker: M, portrait: 'neutral', text: 'Ask away.',
       choices: [

@@ -14,7 +14,13 @@ export interface RomanceRecord {
   pending: number[];
 }
 
+export interface Options { textSpeed: number; runToggle: boolean; shake: boolean; flashes: boolean; musicVol: number; sfxVol: number }
+export const defaultOptions = (): Options => ({ textSpeed: 1, runToggle: false, shake: true, flashes: true, musicVol: 7, sfxVol: 7 });
+
 export class GameState {
+  look = 'hero_a';
+  playMs = 0;
+  options: Options = defaultOptions();
   playerName = 'Kit';
   flags: Record<string, boolean> = {};
   vars: Record<string, number> = {};
@@ -50,14 +56,17 @@ export class GameState {
   addItem(id: string, n = 1): void { this.bag[id] = (this.bag[id] ?? 0) + n; }
   healParty(): void { this.party.forEach(healFully); }
   /** Starting inventory for a fresh game. */
-  newGame(): void { this.reset(); this.money = 500; this.bag = { potion: 5, catch_orb: 8 }; }
+  newGame(name = 'Kit', look = 'hero_a'): void { const opts = this.options; this.reset(); this.options = opts; this.playerName = name; this.look = look; this.money = 500; this.bag = { potion: 5, catch_orb: 8 }; }
   giveStarter(species: string, level = 5): Creature { const c = createCreature(species, level); this.addCreature(c); return c; }
 
   toJSON(): object {
-    return { playerName: this.playerName, flags: this.flags, vars: this.vars, day: this.day, romance: this.romance, party: this.party, box: this.box,
+    return { look: this.look, playMs: this.playMs, options: this.options, playerName: this.playerName, flags: this.flags, vars: this.vars, day: this.day, romance: this.romance, party: this.party, box: this.box,
       bag: this.bag, money: this.money, badges: this.badges, dex: this.dex, home: this.home, steps: this.steps };
   }
   load(o: Partial<GameState>): void {
+    this.look = o.look ?? 'hero_a';
+    this.playMs = o.playMs ?? 0;
+    this.options = { ...defaultOptions(), ...(o.options ?? {}) };
     this.playerName = o.playerName ?? 'Kit';
     this.flags = { ...(o.flags ?? {}) };
     this.vars = { ...(o.vars ?? {}) };

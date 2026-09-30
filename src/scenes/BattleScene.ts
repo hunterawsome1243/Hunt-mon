@@ -11,6 +11,7 @@ import { InputManager } from '../engine/input/InputManager';
 import { MoveFx, Pt } from '../engine/fx/MoveFx';
 import { shutterClose, shutterOpen } from '../engine/fx/Transitions';
 import { sfx } from '../engine/audio/Sfx';
+import { safeShake } from '../engine/fx/Safe';
 import { DialogueBox, drawWindow, textStyle } from '../engine/ui/DialogueBox';
 import { HpBox } from '../engine/ui/HpBox';
 import { ListMenu, Row } from '../engine/ui/ListMenu';
@@ -67,18 +68,18 @@ export class BattleScene extends Phaser.Scene {
 
     this.foeImg = this.add.image(FOE.x, FOE.y, 'mon_f_nibbit').setOrigin(0.5, 1).setDepth(10).setVisible(false);
     this.plyImg = this.add.image(PLY.x, PLY.y, 'mon_b_nibbit').setOrigin(0.5, 1).setDepth(12).setVisible(false);
-    this.heroImg = this.add.image(PLY.x, PLY.y + 2, 'c_hero_a', 3).setOrigin(0.5, 1).setScale(3).setDepth(12);
+    this.heroImg = this.add.image(PLY.x, PLY.y + 2, `c_${state.look}`, 3).setOrigin(0.5, 1).setScale(3).setDepth(12);
 
     this.foeBox = new HpBox(this, 4, 6, false);
     this.plyBox = new HpBox(this, VIEW_W - 122 - 4, 70, true);
     this.box = new DialogueBox(this);
-    this.box.charsPerSec = 60;
+    this.box.charsPerSec = [45, 70, 120][state.options.textSpeed];
     this.box.onBlip = () => sfx('blip');
     this.menu = new ListMenu(this);
     this.menu.onSound = (n) => sfx(n === 'move' ? 'cursor' : n === 'deny' ? 'deny' : n);
     this.flashRect = this.add.rectangle(0, 0, VIEW_W, VIEW_H, 0xffffff, 0).setOrigin(0, 0).setDepth(DEPTH.ui + 50);
     this.fx = new MoveFx(this, (c, a, ms) => this.screenFlash(c, a, ms),
-      (ms, amt) => this.cameras.main.shake(ms, amt));
+      (ms, amt) => safeShake(this.cameras.main, ms, amt));
 
     if (this.init0.trainer) {
       const t = this.init0.trainer;
@@ -395,7 +396,7 @@ export class BattleScene extends Phaser.Scene {
     sfx(e.eff > 1 ? 'hit_super' : e.eff < 1 ? 'hit_weak' : 'hit');
     img.setTintFill(0xffffff);
     this.time.delayedCall(70, () => img.clearTint());
-    this.cameras.main.shake(e.crit || e.eff > 1 ? 200 : 120, e.crit || e.eff > 1 ? 0.012 : 0.006);
+    safeShake(this.cameras.main, e.crit || e.eff > 1 ? 200 : 120, e.crit || e.eff > 1 ? 0.012 : 0.006);
     if (e.eff > 1) this.flashSprite(0xffe08a);
     this.hpShown[e.side] = e.hp;
     await Promise.all([this.blink(img), hb.animateHp(e.hp, e.from)]);
@@ -403,6 +404,7 @@ export class BattleScene extends Phaser.Scene {
   }
   private flashSprite(color: number): void { this.screenFlash(color, 0.25, 140); }
   private screenFlash(color: number, alpha: number, ms: number): void {
+    if (!state.options.flashes) return;
     this.flashRect.setFillStyle(color, alpha);
     this.tweens.add({ targets: this.flashRect, fillAlpha: { from: alpha, to: 0 }, duration: ms });
   }

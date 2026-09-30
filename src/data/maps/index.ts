@@ -21,7 +21,8 @@ function emberwick(): MapDef {
   // player home & neighbour
   b.warp(home.x, home.y, 'house_player', 5, 6, 'up');
   b.warp(nb.x, nb.y, 'house_neighbor', 4, 5, 'up');
-  b.warp(shop.x, shop.y, 'house_neighbor', 4, 5, 'up'); // placeholder until Shop interior (M4/M5)
+  b.warp(shop.x, shop.y, 'care_center', 5, 6, 'up');
+  b.sign(9, 22, ['CARE HUT', 'Free healing for travellers.'])
   // decoration
   b.sign(8, 15 - 1 + 0, ['EMBERWICK', 'A quiet town where', 'every journey begins.']);
   b.sign(13, 4, ['ROUTE 1 -> north', 'Tall grass ahead!', 'Wild creatures live there.']);
@@ -61,6 +62,16 @@ function houseNeighbor(): MapDef {
   return b.build();
 }
 
+function careCenter(): MapDef {
+  const b = room('care_center', 'Care Hut', 11, 8);
+  b.d(1, 0, 'in_shelf'); b.d(9, 1, 'pc'); b.talk(9, 1, 'pc'); b.d(1, 1, 'plant');
+  for (const x of [3, 4, 6, 7]) b.d(x, 3, 'counter');
+  b.fill(3, 4, 5, 2, 'rug');
+  b.warp(5, 7, 'emberwick', 7, 22, 'down');
+  b.npc({ id: 'nurse', x: 5, y: 3, look: 'nurse', dir: 'down', move: 'idle', dialogue: 'nurse' });
+  return b.build();
+}
+
 function route1(): MapDef {
   const b = new MapBuilder('route1', 'Route 1', 20, 26, 'grass');
   for (let y = 0; y < b.h; y++) for (let x = 0; x < b.w; x++) if ((x * 5 + y * 11) % 6 === 0) b.g(x, y, 'grass2');
@@ -77,5 +88,5 @@ function route1(): MapDef {
   return b.build();
 }
 
-export const MAPS: Record<string, MapDef> = Object.fromEntries([emberwick(), housePlayer(), houseNeighbor(), route1()].map((m) => [m.id, m]));
+export const MAPS: Record<string, MapDef> = Object.fromEntries([emberwick(), housePlayer(), houseNeighbor(), careCenter(), route1()].map((m) => [m.id, m]));
 export const START = { map: 'house_player', x: 5, y: 5, dir: 'down' as const };

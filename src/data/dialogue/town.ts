@@ -72,3 +72,25 @@ export const SHELF: DialogueGraph = {
   id: 'shelf', start: 'a',
   nodes: { a: { text: 'Shelves of worn adventure novels and creature field guides.', end: true } },
 };
+
+export const NURSE: DialogueGraph = {
+  id: 'nurse', start: 'a',
+  nodes: {
+    a: {
+      speaker: 'Nurse', portrait: 'happy', text: "Welcome to the Care Hut! I can heal your creatures so they're in top shape. Shall I?",
+      choices: [{ text: 'Yes, please', next: 'heal' }, { text: 'Not right now', next: 'no' }],
+    },
+    heal: { speaker: 'Nurse', portrait: 'neutral', text: "Okay, I'll take your creatures for a moment.", effects: [{ cmd: 'heal' }], next: 'done' },
+    done: { speaker: 'Nurse', portrait: 'happy', text: "Thank you for waiting! Your creatures are fully healed. We hope to see you again!", end: true },
+    no: { speaker: 'Nurse', portrait: 'neutral', text: 'Come back any time. Rest is the best medicine!', end: true },
+  },
+};
+
+export const PC: DialogueGraph = {
+  id: 'pc', start: 'a',
+  nodes: {
+    a: { text: 'A storage terminal hums quietly. Open the creature box?', choices: [{ text: 'Open box', next: 'open' }, { text: 'Not now', next: 'no' }] },
+    open: { effects: [{ cmd: 'pc' }], end: true },
+    no: { end: true },
+  },
+};

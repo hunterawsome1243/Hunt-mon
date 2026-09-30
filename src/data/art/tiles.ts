@@ -207,6 +207,17 @@ function plant(): PixelBuffer {
   b.rect(5, 10, 6, 5, C.r0).rect(5, 10, 6, 1, C.r2).rect(7, 4, 2, 6, C.l3).rect(3, 3, 5, 4, C.l1).rect(8, 5, 5, 4, C.l2);
   return b.outline(C.o);
 }
+function counter(): PixelBuffer {
+  const b = new PixelBuffer(16, 16, P);
+  b.rect(0, 4, 16, 5, C.f2).hline(0, 4, 16, C.f2).rect(0, 9, 16, 7, C.f1).hline(0, 9, 16, C.f0).rect(2, 11, 12, 3, C.f0).hline(2, 13, 12, C.f1);
+  return b.outline(C.o);
+}
+function pc(f: number): PixelBuffer {
+  const b = new PixelBuffer(16, 16, P);
+  b.rect(2, 1, 12, 9, C.st1).rect(3, 2, 10, 7, C.ir).rect(4, 3, 8, 5, f ? C.gl0 : C.gl1).hline(4, 3, 8, C.wf).rect(6, 10, 4, 2, C.st1).rect(3, 12, 10, 3, C.st2).hline(3, 13, 10, C.st1);
+  b.set(11, 12, C.fl1);
+  return b.outline(C.o);
+}
 function rug(): PixelBuffer {
   const b = buf().fill(C.ru0);
   b.rect(0, 0, 16, 1, C.ru1).rect(0, 15, 16, 1, C.ru1).vline(0, 0, 16, C.ru1).vline(15, 0, 16, C.ru1).rect(6, 6, 4, 4, C.ru1);
@@ -266,6 +277,8 @@ export const TILES: Record<string, TileDef> = {
   table: s(table, { solid: true }),
   plant: s(plant, { solid: true }),
   rug: s(rug),
+  counter: s(counter, { solid: true }),
+  pc: { frames: 2, animMs: 700, solid: true, gen: pc },
   mat: s(mat),
   void: s(() => buf().fill(C.o), { solid: true }),
 };

@@ -61,6 +61,14 @@ export class InputManager {
     this.prevPad = new Set(this.padDown);
   }
 
+  /** Forget pending presses and treat currently held inputs as already handled (after returning from a menu scene). */
+  flush(): void {
+    this.queued.clear(); this.pressed.clear();
+    const now = new Set<Action>();
+    for (const a of this.keys.keys()) if (this.keyDown(a)) now.add(a);
+    this.prevKey = now; this.prevPad = new Set(this.padDown);
+  }
+
   private keyDown(a: Action): boolean {
     return (this.keys.get(a) ?? []).some((k) => k.isDown);
   }

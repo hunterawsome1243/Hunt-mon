@@ -18,6 +18,10 @@ import { SPECIES } from '../data/creatures';
 import { MOVES } from '../data/moves';
 import { shutterClose, shutterRetract } from '../engine/fx/Transitions';
 import { sfx } from '../engine/audio/Sfx';
+import { safeFlash } from '../engine/fx/Safe';
+import { ITEMS } from '../data/items';
+import { giveGift } from '../game/romance/Affection';
+import type { MenuRequest, MenuResult } from './MenuScene';
 import type { BattleInit, BattleOutcome } from './BattleScene';
 
 interface AnimTile { sprite: Phaser.GameObjects.Image; key: string; frames: number; ms: number }
@@ -44,6 +48,7 @@ export class OverworldScene extends Phaser.Scene {
   private tileClock = 0;
   private bars: Phaser.GameObjects.Rectangle[] = [];
   private stepsSince = 0;
+  private runOn = false;
   private seed: SceneData = {};
 
   constructor() { super('overworld'); }
@@ -58,13 +63,14 @@ export class OverworldScene extends Phaser.Scene {
     this.animTiles = []; this.npcs = []; this.locked = false; this.turnWait = 0; this.chain = false;
     this.buildMap();
     this.dialogue = new DialogueBox(this);
+    this.dialogue.charsPerSec = [25, 45, 90][state.options.textSpeed];
     this.ui = new SceneDialogueUI(this, this.dialogue, {
       npcActor: (id) => this.npcs.find((n) => n.def.id === id)?.actor,
-      command: (name) => this.command(name),
+      command: (name, arg) => this.command(name, arg),
     });
     this.runner = new DialogueRunner(this.ui, state, rng);
 
-    this.player = new Actor(this, 'player', 'c_hero_a', sx, sy, sd);
+    this.player = new Actor(this, 'player', `c_${state.look}`, sx, sy, sd);
     this.player.onArrive = (a) => this.onPlayerArrive(a);
 
     for (const def of this.map.npcs) {
@@ -99,6 +105,8 @@ export class OverworldScene extends Phaser.Scene {
       trainerBattle: (id: string) => { const d = TRAINERS[id]; return this.startBattle({ foeParty: d.party.map((p) => createCreature(p.species, p.level)), trainer: d, terrain: this.terrain() }); },
       party: () => state.party.map((c) => ({ sp: c.species, lv: c.level, hp: c.hp, xp: c.xp, moves: c.moves.map((m) => m.id) })),
       box: () => state.box.length,
+      name: () => state.playerName,
+      addItem: (id: string, n = 1) => state.addItem(id, n),
       addMon: (sp: string, lv: number) => { state.addCreature(createCreature(sp, lv)); },
       setLevel: (i: number, lv: number) => { const c = state.party[i]; c.level = lv; c.xp = xpForLevel(SPECIES[c.species].curve, lv); c.moves = movesAt(c.species, lv).map((id) => ({ id, pp: MOVES[id].pp, maxPp: MOVES[id].pp })); c.hp = maxHp(c); },
       nearLevelUp: (i: number) => { const c = state.party[i]; c.xp = xpForLevel(SPECIES[c.species].curve, c.level + 1) - 1; },
@@ -198,7 +206,7 @@ export class OverworldScene extends Phaser.Scene {
     this.locked = true;
     sfx('battle_start');
     const cam = this.cameras.main;
-    for (let i = 0; i < 2; i++) { cam.flash(140, 255, 255, 255); await new Promise((r) => this.time.delayedCall(230, () => r(null))); }
+    for (let i = 0; i < 2; i++) { safeFlash(cam, 140); await new Promise((r) => this.time.delayedCall(230, () => r(null))); }
     this.bars = await shutterClose(this, 560);
     this.events.once('wake', (_sys: unknown, data: BattleOutcome) => { void this.onBattleEnd(data); });
     this.scene.sleep();
@@ -291,8 +299,54 @@ export class OverworldScene extends Phaser.Scene {
     } finally { this.locked = false; }
   }
 
-  private async command(name: string): Promise<void> {
+  /** Opens the overlay menu scene and resolves when it closes. */
+  private runMenu(req: MenuRequest): Promise<MenuResult> {
+    return new Promise((res) => {
+      this.game.events.once('menu-closed', (r: MenuResult) => {
+        this.scene.resume();
+        this.input2.flush();
+        this.time.delayedCall(120, () => res(r));
+      });
+      this.scene.pause();
+      this.scene.launch('menu', req);
+    });
+  }
+
+  private async openPause(): Promise<void> {
+    this.locked = true;
+    sfx('menu_open');
+    const pos = { map: this.map.id, x: this.player.tx, y: this.player.ty, dir: this.player.dir };
+    await this.runMenu({ screen: 'pause', pos });
+    this.dialogue.charsPerSec = [25, 45, 90][state.options.textSpeed];
+    this.locked = false;
+  }
+
+  private async command(name: string, arg?: string): Promise<void> {
+    if (name === 'shop') { await this.runMenu({ screen: 'shop', shop: arg ?? 'mira' }); return; }
+    if (name === 'pc') { await this.runMenu({ screen: 'box' }); return; }
+    if (name === 'heal') {
+      const cam = this.cameras.main;
+      sfx('heal_jingle');
+      await new Promise<void>((r) => this.time.delayedCall(300, () => r()));
+      cam.flash(700, 160, 255, 200);
+      state.healParty();
+      state.home = { map: this.map.id, x: Math.floor(this.map.w / 2), y: this.map.h - 2 };
+      await new Promise<void>((r) => this.time.delayedCall(1100, () => r()));
+      return;
+    }
+    if (name === 'gift' && arg) {
+      const r = await this.runMenu({ screen: 'gift', npc: arg });
+      if (!r.gift) { state.vars['gift.result'] = 0; return; }
+      const id = r.gift.item;
+      const res = giveGift(state, arg, ITEMS[id].tags ?? []);
+      if (res.reaction !== 'already') state.bag[id]--;
+      state.vars['gift.result'] = { loved: 1, liked: 2, disliked: 3, already: 4 }[res.reaction];
+      this.ui.affectionFx(arg, res, undefined);
+      for (const m of res.crossed) this.ui.milestone(arg, m);
+      return;
+    }
     if (name === 'sleep') {
+      state.healParty();
       const cam = this.cameras.main;
       await new Promise<void>((res) => { cam.once('camerafadeoutcomplete', () => res()); cam.fadeOut(600, 0, 0, 0); });
       nextDay(state);
@@ -307,6 +361,7 @@ export class OverworldScene extends Phaser.Scene {
     this.input2.poll();
     const dbg = this.game.registry.get('debugOpen') === true;
     this.dialogue.update(dt);
+    state.playMs += dt;
     this.updateTiles(dt);
 
     if (this.dialogue.active) this.dialogue.handleInput(this.input2);
@@ -324,6 +379,8 @@ export class OverworldScene extends Phaser.Scene {
     const p = this.player;
     if (p.moving) return;
     if (this.input2.just('confirm')) { void this.interact(); return; }
+    if (this.input2.just('menu') || this.input2.just('back')) { void this.openPause(); return; }
+    if (this.input2.just('run') && state.options.runToggle) this.runOn = !this.runOn;
     const d = this.input2.heldDir();
     if (!d) { this.chain = false; this.turnWait = 0; return; }
     if (d !== p.dir && !this.chain) {
@@ -336,7 +393,7 @@ export class OverworldScene extends Phaser.Scene {
     p.face(d);
     const nx = p.tx + DIRS[d].x, ny = p.ty + DIRS[d].y;
     if (this.blocked(nx, ny, p)) { this.chain = false; return; }
-    p.step(d, this.input2.down('run'));
+    p.step(d, state.options.runToggle ? this.runOn : this.input2.down('run'));
     this.chain = false;
   }
 

@@ -2,6 +2,8 @@ import '@fontsource/press-start-2p/index.css';
 import Phaser from 'phaser';
 import { VIEW_H, VIEW_W } from './config';
 import { BootScene } from './scenes/BootScene';
+import { MenuScene } from './scenes/MenuScene';
+import { TitleScene } from './scenes/TitleScene';
 import { BattleScene } from './scenes/BattleScene';
 import { OverworldScene } from './scenes/OverworldScene';
 import { DebugMenu } from './debug/DebugMenu';
@@ -19,7 +21,7 @@ async function start(): Promise<void> {
     antialias: false,
     scale: { mode: Phaser.Scale.NONE, zoom: 1 },
     input: { gamepad: true },
-    scene: [BootScene, OverworldScene, BattleScene],
+    scene: [BootScene, TitleScene, OverworldScene, BattleScene, MenuScene],
   });
   // Integer scaling: largest whole multiple that fits the window (canvas is upscaled with nearest-neighbour).
   const fit = (): void => {

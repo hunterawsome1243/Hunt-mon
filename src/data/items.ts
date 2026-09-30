@@ -13,5 +13,11 @@ export const ITEMS: Record<string, ItemDef> = Object.fromEntries(([
   { id: 'catch_orb', name: 'Catch Orb', desc: 'A device for catching wild creatures.', price: 200, kind: 'ball', ballBonus: 1 },
   { id: 'great_orb', name: 'Great Orb', desc: 'A better orb.', price: 600, kind: 'ball', ballBonus: 1.5 },
   { id: 'ultra_orb', name: 'Ultra Orb', desc: 'A top-tier orb.', price: 1200, kind: 'ball', ballBonus: 2 },
+  { id: 'wildflower', name: 'Wildflowers', desc: 'A hand-tied bunch of wildflowers.', price: 150, kind: 'gift', tags: ['flower'] },
+  { id: 'old_novel', name: 'Old Novel', desc: 'A well-loved adventure novel.', price: 300, kind: 'gift', tags: ['book'] },
+  { id: 'trail_bar', name: 'Trail Bar', desc: 'Chewy and energising.', price: 100, kind: 'gift', tags: ['sport', 'food'] },
+  { id: 'pocket_gadget', name: 'Pocket Gadget', desc: 'A clicking, whirring little gizmo.', price: 500, kind: 'gift', tags: ['tech'] },
+  { id: 'shiny_pebble', name: 'Shiny Pebble', desc: 'Unusually smooth and sparkly.', price: 400, kind: 'gift', tags: ['rare'] },
+  { id: 'odd_trinket', name: 'Odd Trinket', desc: 'You are not sure what it is.', price: 40, kind: 'gift', tags: ['junk'] },
   { id: 'sweet_bun', name: 'Sweet Bun', desc: 'A fresh bun. Mira’s favorite recipe.', price: 120, kind: 'gift', tags: ['sweet', 'food'] },
 ] as ItemDef[]).map((i) => [i.id, i]));

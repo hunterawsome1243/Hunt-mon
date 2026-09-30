@@ -62,7 +62,8 @@ export class BootScene extends Phaser.Scene {
       TextureFactory.single(this, `mon_i_${sp.id}`, creatureIcon(front));
     }
     void EXPRESSIONS;
-    state.newGame();
-    this.scene.start('overworld');
+    // `?quick` skips the title (used by automated tests): fresh game straight into the house
+    if (new URLSearchParams(location.search).has('quick')) { state.newGame(); this.scene.start('overworld'); }
+    else this.scene.start('title');
   }
 }

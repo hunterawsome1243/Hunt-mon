@@ -17,7 +17,7 @@ try {
   const logs = [];
   page.on('console', (m) => { if (['error', 'warning'].includes(m.type())) logs.push(`${m.type()}: ${m.text()}`); });
   page.on('pageerror', (e) => logs.push('pageerror: ' + e.message));
-  await page.goto(`http://localhost:${PORT}/`);
+  await page.goto(`http://localhost:${PORT}/?quick`);
   await page.waitForFunction(() => window.__hunt, null, { timeout: 15000 });
   const st = () => page.evaluate(() => window.__hunt.state());
   await sleep(1200);
@@ -111,6 +111,7 @@ try {
   const before = (await hunt('party')).length + (await hunt('box'));
   let caught = false;
   for (let attempt = 0; attempt < 6 && !caught; attempt++) {
+    console.log('[smoke] capture attempt', attempt);
     await hunt('wild', 'wrenlet', 3);
     await waitBattle();
     if (!(await waitPhase('command'))) { fail('no command phase for capture test'); break; }
@@ -126,6 +127,7 @@ try {
   }
   if (!caught) fail('could not capture a sleeping 1hp creature in 6 tries');
   await hunt('setLevel', 0, 10); // keep the trainer fight winnable so the test is deterministic
+  console.log('[smoke] trainer');
   // trainer battle with line of sight
   await page.evaluate(() => window.__game.scene.getScene('overworld').warpTo('route1', 9, 20, 'up'));
   await sleep(1000);
@@ -138,6 +140,7 @@ try {
     await sleep(2500);
     console.log('after trainer:', JSON.stringify(await hunt('party')), 'money', await hunt('money'), 'defeated', await hunt('flag', 'trainer.timo'));
   }
+  console.log('[smoke] evolution scenario');
   // ---------------- scenario: level-up -> evolution -> learn prompt ----------------
   await page.evaluate(() => window.__game.scene.getScene('overworld').warpTo('route1', 8, 22, 'up'));
   await sleep(1000);
@@ -148,7 +151,8 @@ try {
   if (!(await waitPhase('command'))) fail('no command phase (evolution scenario)');
   await page.evaluate(() => { const b = window.__battle.battle; b.f.hp = 1; });
   await page.keyboard.press('z'); await sleep(300);
-  await page.keyboard.press('z'); // first move
+  await page.keyboard.press('ArrowDown'); await sleep(120);
+  await page.keyboard.press('z'); // second move (ember) - the first is a status move
   let sawEvo = false;
   for (let i = 0; i < 400 && (await battleActive()); i++) {
     await sleep(150);
@@ -162,6 +166,7 @@ try {
   if (!sawEvo || pp.sp !== 'emberhound') fail('creature did not evolve');
   if (!pp.moves.includes('flame_wheel')) fail('evolved creature did not learn flame_wheel: ' + pp.moves);
   await sleep(1200);
+  console.log('[smoke] faint scenario');
   // ---------------- scenario: faint -> forced switch -> blackout ----------------
   await hunt('addMon', 'nibbit', 4);
   await hunt('wild', 'skyrill', 45);

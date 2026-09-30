@@ -82,5 +82,6 @@ export const LOOKS: Record<string, Look> = {
   rhea: { skin: '#b9835a', hair: '#c8452f', shirt: '#2f3f6a', pants: '#3a3a4a', hairStyle: 'short', accent: '#f2d95c' },
   ilsa: { skin: '#f0d0b0', hair: '#4a3a6a', shirt: '#e8e2d0', pants: '#5a6a4a', hairStyle: 'long', accent: '#4aa89a' },
   odette: { skin: '#8a5a3a', hair: '#1f1a2a', shirt: '#e8895a', pants: '#f0e2c0', hairStyle: 'long', accent: '#f2f2f2' },
+  nurse: { skin: '#f4d4b8', hair: '#e878a8', shirt: '#f0f0f8', pants: '#e0a8c0', hairStyle: 'long', accent: '#e0435f' },
   shopkeeper: { skin: '#c98e62', hair: '#2a1a1a', shirt: '#4aa89a', pants: '#3a3a5a', hairStyle: 'long' },
 };
