@@ -42,10 +42,7 @@ export function emberwick(): MapDef {
   b.d(10, 24, 'bush'); b.d(28, 19, 'rock'); b.d(2, 19, 'rock'); b.d(29, 22, 'bush');
   scatter(b, rng, 'flowers_y', 6); scatter(b, rng, 'flowers_p', 6); scatter(b, rng, 'bush', 3);
   // story gates
-  b.trigger({ x: 15, y: 2, cond: { notFlag: 'starter.chosen' }, dialogue: 'need_starter', push: 'down' });
-  b.trigger({ x: 16, y: 2, cond: { notFlag: 'starter.chosen' }, dialogue: 'need_starter', push: 'down' });
-  b.trigger({ x: 15, y: 2, cond: { all: [{ flag: 'starter.chosen' }, { notFlag: 'quest.rival1' }] }, dialogue: 'need_starter', push: 'down' });
-  b.trigger({ x: 16, y: 2, cond: { all: [{ flag: 'starter.chosen' }, { notFlag: 'quest.rival1' }] }, dialogue: 'need_starter', push: 'down' });
+  b.triggerLine('row', 2, { cond: { any: [{ notFlag: 'starter.chosen' }, { notFlag: 'quest.rival1' }] }, dialogue: 'need_starter', push: 'down' });
   b.warp(15, 0, 'route1', 10, 34, 'up').warp(16, 0, 'route1', 11, 34, 'up');
   // people
   b.npc({ id: 'kid1', x: 12, y: 12, look: 'kid', dir: 'down', move: 'wander', radius: 3, dialogue: 'kid' });
@@ -92,8 +89,7 @@ export function brindlemoor(): MapDef {
   b.sign(31, 22, ['MOTH & MUG CAFE', 'Leave a story on the wall.']);
   b.warp(16, 29, 'route1', 10, 1, 'down').warp(17, 29, 'route1', 11, 1, 'down');
   b.warp(35, 14, 'route2', 1, 9, 'right').warp(35, 15, 'route2', 1, 10, 'right');
-  b.trigger({ x: 33, y: 14, cond: { notFlag: 'badge.cinder' }, dialogue: 'need_badge', push: 'left' });
-  b.trigger({ x: 33, y: 15, cond: { notFlag: 'badge.cinder' }, dialogue: 'need_badge', push: 'left' });
+  b.triggerLine('col', 33, { cond: { notFlag: 'badge.cinder' }, dialogue: 'need_badge', push: 'left' });
   b.npc({ id: 'guard_e', x: 32, y: 13, look: 'scout', dir: 'down', move: 'idle', lines: ['East of here, the road climbs toward Mistwood. The gym leader asks that only badge holders pass.'] });
   b.npc({ id: 'bm1', x: 19, y: 18, look: 'villager_f', dir: 'left', move: 'wander', radius: 2, lines: ['Odette\'s lemon cake is worth the walk from anywhere in the region.', 'Rhea buys three slices, then pretends they are for the trainers.'] });
   b.npc({ id: 'bm2', x: 12, y: 17, look: 'villager_m', dir: 'right', move: 'wander', radius: 2, lines: ['The glow has been weaker this season. Even the fountain dims at night.'] });
@@ -111,8 +107,8 @@ export function elderHouse(): MapDef {
   b.fill(3, 4, 5, 2, 'rug'); b.d(1, 2, 'plant'); b.d(9, 4, 'plant');
   b.warp(5, 7, 'emberwick', 23, 21, 'down');
   b.npc({ id: 'elder', x: 5, y: 2, look: 'elder', dir: 'down', move: 'idle', dialogue: 'elder_after' });
-  b.npc({ id: 'jace', x: 7, y: 4, look: 'jace', dir: 'left', move: 'idle', cond: { notFlag: 'quest.rival1' }, lines: ["Go on, talk to the Elder first! I'm waiting my turn. Mostly."] });
-  b.trigger({ x: 5, y: 4, cond: { notFlag: 'quest.rival1' }, dialogue: 'lab_intro' });
+  b.npc({ id: 'jace', x: 7, y: 4, look: 'jace', dir: 'left', move: 'idle', cond: { notFlag: 'quest.rival1' }, dialogue: 'lab_intro' });
+  b.triggerLine('row', 4, { cond: { notFlag: 'quest.rival1' }, dialogue: 'lab_intro' });
   return b.build();
 }
 

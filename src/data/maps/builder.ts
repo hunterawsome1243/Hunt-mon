@@ -1,5 +1,6 @@
 import type { MapDef, NpcDef, PickupDef, SignDef, TriggerDef, WarpDef } from '../types';
 import type { Dir } from '../../config';
+import { TILES } from '../art/tiles';
 
 /** Authoring helper: paint tile names into a grid, then emit a MapDef. */
 export class MapBuilder {
@@ -114,6 +115,24 @@ export class MapBuilder {
   sign(x: number, y: number, lines: string[]): this { this.d(x, y, 'sign'); this.signs.push({ x, y, lines }); return this; }
   npc(n: NpcDef): this { this.npcs.push(n); return this; }
   trigger(t: TriggerDef): this { this.triggers.push(t); return this; }
+  /** Can the player stand here (ignoring NPCs)? */
+  walkable(x: number, y: number): boolean {
+    if (!this.in(x, y)) return false;
+    const g = TILES[this.ground[y][x]], d = this.deco[y][x] ? TILES[this.deco[y][x]!] : null;
+    return !g?.solid && !d?.solid && !this.signs.some((s) => s.x === x && s.y === y);
+  }
+  /**
+   * A story trigger across a whole row or column of walkable tiles, so the player cannot slip around it
+   * through a gap beside the path.
+   */
+  triggerLine(axis: 'row' | 'col', at: number, t: Omit<TriggerDef, 'x' | 'y'>): this {
+    const n = axis === 'row' ? this.w : this.h;
+    for (let i = 0; i < n; i++) {
+      const x = axis === 'row' ? i : at, y = axis === 'row' ? at : i;
+      if (this.walkable(x, y) && !this.warps.some((w) => w.x === x && w.y === y)) this.triggers.push({ ...t, x, y });
+    }
+    return this;
+  }
   pickup(p: PickupDef): this { this.pickups.push(p); this.d(p.x, p.y, 'sparkle'); return this; }
   build(): MapDef {
     return { id: this.id, name: this.name, w: this.w, h: this.h, ground: this.ground, deco: this.deco, warps: this.warps, npcs: this.npcs, signs: this.signs, indoor: this.indoor, terrain: this.terrain, triggers: this.triggers, pickups: this.pickups, autorun: this.autorun, time: this.time, spawn: this.spawn };

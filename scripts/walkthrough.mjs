@@ -99,10 +99,10 @@ try {
     const deadline = Date.now() + (opts.timeout ?? 150000);
     let stuck = 0;
     while (Date.now() < deadline) {
-      if (await interrupt(opts.prefer)) { stuck = 0; continue; }
       const s = await st();
       if (s.map !== map) return s.map;
-      if (s.x === gx && s.y === gy) return 'arrived';
+      if (s.x === gx && s.y === gy && !s.moving) return 'arrived';
+      if (await interrupt(opts.prefer)) { stuck = 0; continue; }
       const r = await stepToward(gx, gy, opts.allowGoalSolid);
       if (r === null) { stuck++; await sleep(300); if (stuck > 20) { fail(`${label}: no path from ${s.x},${s.y} to ${gx},${gy} on ${map}`); return 'nopath'; } }
       else stuck = 0;

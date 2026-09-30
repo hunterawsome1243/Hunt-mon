@@ -75,8 +75,7 @@ export function hollowHall(): MapDef {
   b.fill(9, 3, 6, 3, 'rug');
   b.warp(11, 19, 'hollowdeep', 22, 1, 'down').warp(12, 19, 'hollowdeep', 23, 1, 'down');
   b.warp(11, 0, 'lumen_chamber', 7, 12, 'up').warp(12, 0, 'lumen_chamber', 8, 12, 'up');
-  b.trigger({ x: 11, y: 1, cond: { notFlag: 'quest.lumen_open' }, dialogue: 'need_lumen', push: 'down' });
-  b.trigger({ x: 12, y: 1, cond: { notFlag: 'quest.lumen_open' }, dialogue: 'need_lumen', push: 'down' });
+  b.triggerLine('row', 1, { cond: { notFlag: 'quest.lumen_open' }, dialogue: 'need_lumen', push: 'down' });
   b.npc({ id: 'orrin', x: 11, y: 3, look: 'orrin', dir: 'down', move: 'idle', dialogue: 'orrin' });
   b.npc({ id: 'kade', x: 7, y: 14, look: 'mystic', dir: 'right', move: 'idle', trainer: { id: 'kade', sight: 5 } });
   b.npc({ id: 'lyra', x: 17, y: 8, look: 'scout', dir: 'left', move: 'idle', trainer: { id: 'lyra', sight: 5 } });
@@ -94,9 +93,8 @@ export function lumenChamber(): MapDef {
   for (const [x, y] of [[7, 4], [8, 4], [7, 5], [8, 5], [6, 5], [9, 5]]) b.d(x, y, 'crystal');
   b.g(7, 13, 'cave_floor'); b.g(8, 13, 'cave_floor');
   b.warp(7, 13, 'hollow_hall', 11, 2, 'down').warp(8, 13, 'hollow_hall', 12, 2, 'down');
-  b.npc({ id: 'jace_lc', x: 5, y: 9, look: 'jace', dir: 'right', move: 'idle', cond: { notFlag: 'quest.done' }, lines: ['...'] });
-  b.trigger({ x: 7, y: 10, cond: { notFlag: 'quest.done' }, dialogue: 'lumen' });
-  b.trigger({ x: 8, y: 10, cond: { notFlag: 'quest.done' }, dialogue: 'lumen' });
+  b.npc({ id: 'jace_lc', x: 5, y: 9, look: 'jace', dir: 'right', move: 'idle', cond: { notFlag: 'quest.done' }, dialogue: 'lumen' });
+  b.triggerLine('row', 10, { cond: { notFlag: 'quest.done' }, dialogue: 'lumen' });
   b.spawn = { x: 7, y: 11, dir: 'up' };
   return b.build();
 }

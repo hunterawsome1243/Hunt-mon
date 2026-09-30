@@ -113,11 +113,9 @@ export function mistwood(): MapDef {
   b.sign(41, 28, ['HOLLOWDEEP ->', 'Cave mouth ahead. Bring light.']);
   b.warp(0, 20, 'route2', 38, 9, 'left').warp(0, 21, 'route2', 38, 10, 'left');
   b.warp(43, 30, 'hollowdeep', 1, 30, 'right').warp(43, 31, 'hollowdeep', 1, 31, 'right');
-  b.trigger({ x: 5, y: 20, cond: { all: [{ flag: 'badge.cinder' }, { notFlag: 'quest.rival2' }] }, dialogue: 'rival2' });
-  b.trigger({ x: 5, y: 21, cond: { all: [{ flag: 'badge.cinder' }, { notFlag: 'quest.rival2' }] }, dialogue: 'rival2' });
-  b.trigger({ x: 2, y: 20, cond: { notFlag: 'badge.cinder' }, dialogue: 'need_badge', push: 'left' });
-  b.trigger({ x: 2, y: 21, cond: { notFlag: 'badge.cinder' }, dialogue: 'need_badge', push: 'left' });
-  b.npc({ id: 'jace_mw', x: 6, y: 19, look: 'jace', dir: 'down', move: 'idle', cond: { all: [{ flag: 'badge.cinder' }, { notFlag: 'quest.rival2' }] }, lines: ['...'] });
+  b.triggerLine('col', 5, { cond: { all: [{ flag: 'badge.cinder' }, { notFlag: 'quest.rival2' }] }, dialogue: 'rival2' });
+  b.triggerLine('col', 2, { cond: { notFlag: 'badge.cinder' }, dialogue: 'need_badge', push: 'left' });
+  b.npc({ id: 'jace_mw', x: 6, y: 19, look: 'jace', dir: 'down', move: 'idle', cond: { all: [{ flag: 'badge.cinder' }, { notFlag: 'quest.rival2' }] }, dialogue: 'rival2' });
   b.npc({ id: 'ilsa_mw', x: 31, y: 16, look: 'ilsa', dir: 'down', move: 'look', cond: { all: [{ flag: 'quest.mistwood_open' }, { notFlag: 'quest.rival2' }] }, dialogue: 'ilsa' });
   trainerAt(b, 'fen', 'mystic', 16, 26, 'up', 3, 'forest_floor');
   trainerAt(b, 'lark', 'scout', 24, 20, 'down', 3, 'forest_floor');
