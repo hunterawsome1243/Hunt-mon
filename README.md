@@ -5,6 +5,18 @@ dating-sim layer. Phaser 3 + TypeScript + Vite. **Everything is original** (crea
 art, music) and **nothing is loaded from disk**: all pixel art is generated in code and all music/SFX are
 synthesised with the Web Audio API.
 
+## Download (Windows)
+
+[![Download Hunt-mon](https://img.shields.io/github/v/release/hunterawsome1243/Hunt-mon?label=Download%20Hunt-mon&style=for-the-badge&color=2ea44f)](https://github.com/hunterawsome1243/Hunt-mon/releases/latest)
+
+1. Open the **[latest release](https://github.com/hunterawsome1243/Hunt-mon/releases/latest)** and scroll to **Assets**.
+2. Download **`Hunt-mon.Setup.x.y.z.exe`** to install, or **`Hunt-mon.x.y.z.exe`** to run it with no install.
+3. If Windows shows "Windows protected your PC", click **More info → Run anyway** (the app isn't code-signed).
+
+Press **F11** for fullscreen.
+
+## Run from source
+
 ```bash
 npm install
 npm run dev        # http://localhost:5173
