@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Hunt-mon art gallery (dev only)</title>
+  <style>
+    body { background: #1b1426; color: #ddd; font: 12px monospace; margin: 12px; }
+    h2 { margin: 18px 0 6px; color: #f2c94c; }
+    .row { display: flex; flex-wrap: wrap; gap: 10px; }
+    figure { margin: 0; text-align: center; }
+    canvas { image-rendering: pixelated; background: #3a3050; display: block; }
+  </style>
+</head>
+<body>
+  <h1>Hunt-mon art gallery</h1>
+  <p>Dev tool: open at <code>/gallery.html</code> while <code>npm run dev</code> is running. Not part of the game build.</p>
+  <div id="root"></div>
+  <script type="module" src="/src/gallery.ts"></script>
+</body>
+</html>

@@ -1,11 +1,28 @@
 import type { CreatureArt } from '../../data/types';
-import { shade } from '../../data/art/characters';
+import { mix, shade } from '../../data/art/characters';
 import { PixelBuffer } from './PixelBuffer';
 
 export const MON_SIZE = 56;
 
 // palette indices
-const OL = 1, MAIN = 2, SHD = 3, LIT = 4, ACC = 5, ACS = 6, BEL = 7, EYW = 8, EYE = 9, DARK = 10, WHITE = 11, IRIS = 12;
+const OL = 1, MAIN = 2, SHD = 3, LIT = 4, ACC = 5, ACS = 6, BEL = 7, EYW = 8, EYE = 9, DARK = 10, WHITE = 11, IRIS = 12, OL_ACC = 13, OL_BEL = 14;
+
+/** Light from the top-left: lift body pixels on top/left silhouette edges, then outline with a tone that matches the neighbour. */
+function finish(b: PixelBuffer): PixelBuffer {
+  const src = b.data.slice();
+  const at = (x: number, y: number): number => (x >= 0 && y >= 0 && x < b.w && y < b.h ? src[y * b.w + x] : 0);
+  for (let y = 0; y < b.h; y++) for (let x = 0; x < b.w; x++) {
+    if (at(x, y) === MAIN && (!at(x, y - 1) || !at(x - 1, y))) b.data[y * b.w + x] = LIT;
+  }
+  for (let y = 0; y < b.h; y++) for (let x = 0; x < b.w; x++) {
+    if (at(x, y)) continue;
+    for (const [dx, dy] of [[0, 1], [1, 0], [-1, 0], [0, -1]]) {
+      const v = at(x + dx, y + dy);
+      if (v) { b.data[y * b.w + x] = v === ACC || v === ACS ? OL_ACC : v === BEL || v === WHITE || v === EYW ? OL_BEL : OL; break; }
+    }
+  }
+  return b;
+}
 
 interface Ell { x: number; y: number; rx: number; ry: number }
 
@@ -80,7 +97,7 @@ function layoutFor(plan: CreatureArt['plan']): Layout {
 function drawCreature(art: CreatureArt, back: boolean): PixelBuffer {
   const [main, shd, lit, acc, bel] = art.pal;
   const outline = shade(shd, 0.4);
-  const pal = ['', outline, main, shd, lit, acc, shade(acc, 0.7), bel, '#ffffff', '#2a1d2e', '#3a1a24', '#ffffff', art.eye ?? '#2a1d2e'];
+  const pal = ['', outline, main, shd, lit, acc, shade(acc, 0.7), bel, '#ffffff', '#2a1d2e', '#3a1a24', '#ffffff', art.eye ?? '#2a1d2e', shade(acc, 0.4), mix(outline, bel, 0.45)];
   const b = new PixelBuffer(MON_SIZE, MON_SIZE, pal);
   const s = art.size * (back ? 1.12 : 1);
   const p = new Painter(b, s);
@@ -204,7 +221,7 @@ function drawCreature(art: CreatureArt, back: boolean): PixelBuffer {
     // back view: spine highlight
     p.ell({ x: body.x, y: body.y - body.ry * 0.3, rx: 3, ry: body.ry * 0.7 }, LIT, LIT, LIT);
   }
-  return b.outline(OL);
+  return finish(b);
 }
 
 export const creatureFront = (a: CreatureArt): PixelBuffer => drawCreature(a, false);

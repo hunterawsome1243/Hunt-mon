@@ -42,8 +42,13 @@ const rngFor = (s: string) => { let h = 2166136261; for (const c of s) h = Math.
 function grass(seed: string): PixelBuffer {
   const b = buf().fill(C.g0);
   const r = rngFor(seed);
-  b.speckle(r, [C.g1], 0.18).speckle(r, [C.g3], 0.06);
-  for (let i = 0; i < 4; i++) { const x = r.int(1, 14), y = r.int(1, 14); b.set(x, y, C.g2); b.set(x, y - 1, C.g1); }
+  b.speckle(r, [C.g1], 0.14).speckle(r, [C.g3], 0.04);
+  // blade tufts: a dark base with two lit tips, the Stardew-style meadow texture
+  for (let i = 0; i < 6; i++) {
+    const x = r.int(1, 14), y = r.int(2, 14);
+    b.set(x, y, C.g3).set(x - 1, y - 1, C.g2).set(x + 1, y - 1, C.g2).set(x, y - 1, C.g1);
+    if (i % 3 === 0) b.set(x, y - 2, C.g2);
+  }
   return b;
 }
 function tallGrass(f: number): PixelBuffer {
@@ -64,7 +69,10 @@ function tallGrass(f: number): PixelBuffer {
 function path(seed: string): PixelBuffer {
   const b = buf().fill(C.p0);
   const r = rngFor(seed);
-  b.speckle(r, [C.p2], 0.14).speckle(r, [C.p1], 0.1).speckle(r, [C.p3], 0.03);
+  b.speckle(r, [C.p2], 0.12).speckle(r, [C.p1], 0.1);
+  // soft worn patches and a few pebbles with a lit top edge
+  for (let i = 0; i < 3; i++) { const x = r.int(1, 12), y = r.int(1, 13); b.hline(x, y, 3, C.p1).hline(x + 1, y + 1, 2, C.p1); }
+  for (let i = 0; i < 4; i++) { const x = r.int(1, 13), y = r.int(2, 14); b.set(x, y, C.p3).set(x + 1, y, C.p3).set(x, y - 1, C.p2); }
   return b;
 }
 function water(f: number): PixelBuffer {
@@ -102,7 +110,10 @@ function tree(part: 'tl' | 'tr' | 'bl' | 'br'): PixelBuffer {
       big.set(x, y, lit > 5 ? C.l2 : lit > -2 ? C.l1 : lit > -8 ? C.l0 : C.l3);
     }
   }
-  big.speckle(r, [C.l2, C.l3], 0.12, C.l1);
+  big.speckle(r, [C.l2, C.l3], 0.1, C.l1);
+  // leaf clusters: lit clumps on the upper-left, shaded notches on the lower-right
+  for (const [x, y] of [[9, 6], [14, 4], [7, 12], [12, 9], [18, 7]]) big.rect(x, y, 3, 2, C.l2).hline(x + 1, y - 1, 2, C.l2).hline(x, y + 2, 3, C.l1);
+  for (const [x, y] of [[22, 16], [18, 20], [25, 12], [14, 19]]) big.rect(x, y, 3, 2, C.l3).hline(x, y - 1, 2, C.l0);
   big.outline(C.o);
   big.rect(13, 24, 6, 8, C.t0).rect(17, 24, 2, 8, C.t1).rect(12, 30, 8, 2, C.t1);
   big.set(12, 24, C.o);

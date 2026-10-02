@@ -41,7 +41,7 @@ const LIST: C[] = [
   // ---- route creatures
   [10, 'wrenlet', 'Wrenlet', ['normal', 'gale'], [38, 46, 36, 34, 34, 60], 255, 'fast', 40, [18, 'skyrill'],
     [[1, 'tackle'], [4, 'gust'], [9, 'quick_dash'], [14, 'wing_slash']],
-    art('bird', ['#c8a070', '#8a6a44', '#e8d0a8', '#e8a040', '#f4ead0'], 0.6, ['belly'], ), 'Chirps a cheerful two-note song.'],
+    art('bird', ['#c8a070', '#8a6a44', '#e8d0a8', '#e8a040', '#f4ead0'], 0.74, ['belly'], ), 'Chirps a cheerful two-note song.'],
   [11, 'skyrill', 'Skyrill', ['normal', 'gale'], [62, 78, 56, 54, 56, 90], 120, 'medium', 120, null,
     [[18, 'wing_slash'], [22, 'air_cutter'], [27, 'agility'], [32, 'take_down']],
     art('bird', ['#b08858', '#6a4a30', '#e0c090', '#d86a3a', '#f4ead0'], 0.9, ['wings', 'crest_flame', 'belly']), 'Rides thermals above the cliffs for hours.'],
