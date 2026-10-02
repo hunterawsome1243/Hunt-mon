@@ -8,6 +8,7 @@ function createWindow() {
     height: 640,
     useContentSize: true,
     backgroundColor: '#000000',
+    icon: path.join(__dirname, '..', 'build', 'icon.png'),
     autoHideMenuBar: true,
     webPreferences: { contextIsolation: true, nodeIntegration: false },
   });
