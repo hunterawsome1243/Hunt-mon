@@ -8,6 +8,8 @@ import { TitleScene } from './scenes/TitleScene';
 import { BattleScene } from './scenes/BattleScene';
 import { OverworldScene } from './scenes/OverworldScene';
 import { DebugMenu } from './debug/DebugMenu';
+import { TouchControls } from './engine/input/TouchControls';
+import { isTouchDevice } from './engine/input/virtual';
 
 async function start(): Promise<void> {
   try { await document.fonts.load('8px "Press Start 2P"'); } catch { /* font falls back */ }
@@ -25,10 +27,19 @@ async function start(): Promise<void> {
     scene: [BootScene, TitleScene, OverworldScene, BattleScene, MenuScene, EndScene],
   });
   // Integer scaling: largest whole multiple that fits the window (canvas is upscaled with nearest-neighbour).
+  // Phones: fractional zoom so the picture fills a narrow portrait screen (the canvas is still nearest-neighbour),
+  // with the top half reserved for the game and the lower part for the thumb controls.
+  const touch = isTouchDevice();
+  const host = document.getElementById('game');
   const fit = (): void => {
-    const z = Math.max(1, Math.floor(Math.min(window.innerWidth / VIEW_W, window.innerHeight / VIEW_H)));
-    game.scale.setZoom(z);
+    const w = window.innerWidth, h = window.innerHeight;
+    if (touch) {
+      const portrait = h > w;
+      game.scale.setZoom(Math.max(1, Math.min(w / VIEW_W, (portrait ? h * 0.5 : h) / VIEW_H)));
+      if (host) host.style.alignItems = portrait ? 'flex-start' : 'center';
+    } else game.scale.setZoom(Math.max(1, Math.floor(Math.min(w / VIEW_W, h / VIEW_H))));
   };
+  if (touch) new TouchControls();
   fit();
   window.addEventListener('resize', fit);
   new DebugMenu(game);

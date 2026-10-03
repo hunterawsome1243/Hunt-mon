@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { DEPTH, FONT, VIEW_H, VIEW_W } from '../config';
+import { isTouchDevice } from '../engine/input/virtual';
 import { InputManager } from '../engine/input/InputManager';
 import { rng } from '../engine/rng';
 import { sfx } from '../engine/audio/Sfx';
@@ -140,7 +141,7 @@ export class TitleScene extends Phaser.Scene {
           if (active) grid.add(this.add.rectangle(px - 3, ay - 2, 50, 12, 0xc8452f).setOrigin(0, 0));
           grid.add(text(this, px, ay, l, active ? '#ffffff' : COL.ink));
         });
-        grid.add(text(this, 120, 148, 'Enter: pick  Esc: back  (type too!)', '#b8a8d8').setOrigin(0.5, 0).setScale(0.75));
+        grid.add(text(this, 120, 148, isTouchDevice() ? 'A: pick  B: back' : 'Enter: pick  Esc: back  (type too!)', '#b8a8d8').setOrigin(0.5, 0).setScale(0.75));
       };
       draw();
       const done = (v: string | null): void => { this.input2.textMode = false; this.logo.setVisible(true); kb?.off('keydown', onKey); this.handler = null; layer.destroy(); resolve(v); };

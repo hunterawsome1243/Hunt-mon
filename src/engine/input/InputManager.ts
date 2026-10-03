@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { virtualHeld, virtualQueued } from './virtual';
 
 const isLetter = (k: Phaser.Input.Keyboard.Key): boolean => k.keyCode >= 65 && k.keyCode <= 90;
 
@@ -52,6 +53,10 @@ export class InputManager {
         if (ay < -0.5) this.padDown.add('up'); else if (ay > 0.5) this.padDown.add('down');
       }
     }
+    // on-screen touch controls behave like a gamepad: held state plus tap queue
+    for (const a of virtualHeld) this.padDown.add(a);
+    for (const a of virtualQueued) this.queued.add(a);
+    virtualQueued.clear();
     const nowKey = new Set<Action>();
     for (const a of this.keys.keys()) if (this.keyDown(a)) nowKey.add(a);
     for (const a of Object.keys(KEYS) as Action[]) {
@@ -67,7 +72,7 @@ export class InputManager {
 
   /** Forget pending presses and treat currently held inputs as already handled (after returning from a menu scene). */
   flush(): void {
-    this.queued.clear(); this.pressed.clear();
+    this.queued.clear(); this.pressed.clear(); virtualQueued.clear();
     const now = new Set<Action>();
     for (const a of this.keys.keys()) if (this.keyDown(a)) now.add(a);
     this.prevKey = now; this.prevPad = new Set(this.padDown);
