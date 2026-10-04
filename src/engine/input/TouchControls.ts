@@ -2,7 +2,7 @@ import { virtualHeld, virtualQueued } from './virtual';
 import type { Action } from './InputManager';
 
 const CSS = `
-#touch{position:fixed;inset:0;pointer-events:none;z-index:20;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;touch-action:none;font-family:"Press Start 2P",monospace}
+#touch{position:absolute;inset:0;pointer-events:none;z-index:20;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;touch-action:none;font-family:"Press Start 2P",monospace}
 #touch *{touch-action:none;-webkit-tap-highlight-color:transparent}
 #touch .pad{position:absolute;pointer-events:auto;border-radius:50%;background:rgba(20,18,36,.55);border:2px solid rgba(232,220,255,.35)}
 #touch .stick{left:max(18px,env(safe-area-inset-left));bottom:max(22px,env(safe-area-inset-bottom));width:132px;height:132px}
@@ -13,22 +13,20 @@ const CSS = `
 #touch .b{right:calc(max(18px,env(safe-area-inset-right)) + 80px);bottom:max(22px,env(safe-area-inset-bottom));width:60px;height:60px}
 #touch .run{right:calc(max(18px,env(safe-area-inset-right)) + 6px);bottom:max(22px,env(safe-area-inset-bottom));width:44px;height:44px;font-size:8px}
 #touch .menu{right:max(14px,env(safe-area-inset-right));top:max(10px,env(safe-area-inset-top));width:auto;height:30px;padding:0 12px;border-radius:15px;font-size:8px}
-@media (orientation:portrait){#touch .stick{bottom:max(40px,env(safe-area-inset-bottom))}
-#touch .a{bottom:calc(max(40px,env(safe-area-inset-bottom)) + 44px)}#touch .b{bottom:max(40px,env(safe-area-inset-bottom))}#touch .run{bottom:max(40px,env(safe-area-inset-bottom))}}
 `;
 
 /** Floating thumb-stick (4-way, dominant axis) plus A / B / RUN / MENU buttons, as a DOM overlay for phones and tablets. */
 export class TouchControls {
   private root = document.createElement('div');
 
-  constructor() {
+  constructor(parent: HTMLElement = document.body) {
     const style = document.createElement('style');
     style.textContent = CSS;
     document.head.appendChild(style);
     this.root.id = 'touch';
     this.root.addEventListener('contextmenu', (e) => e.preventDefault());
     this.root.append(this.makeStick(), this.button('a', 'A', 'confirm'), this.button('b', 'B', 'back'), this.button('run', 'RUN', 'run'), this.button('menu', 'MENU', 'menu'));
-    document.body.appendChild(this.root);
+    parent.appendChild(this.root);
   }
 
   private button(cls: string, label: string, action: Action): HTMLElement {
@@ -63,7 +61,10 @@ export class TouchControls {
     };
     const move = (e: PointerEvent): void => {
       const r = base.getBoundingClientRect();
-      const dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2);
+      const sx = e.clientX - (r.left + r.width / 2), sy = e.clientY - (r.top + r.height / 2);
+      // when the whole game is turned 90 degrees clockwise (portrait phones), screen axes map to frame axes: x' = y, y' = -x
+      const turned = document.getElementById('rot')?.dataset.turned === '1';
+      const dx = turned ? sy : sx, dy = turned ? -sx : sy;
       const max = r.width / 2 - 6, len = Math.hypot(dx, dy) || 1, k = Math.min(1, max / len);
       knob.style.transform = `translate(${dx * k}px,${dy * k}px)`;
       // dead zone, then pick the dominant axis (grid movement is 4-way)

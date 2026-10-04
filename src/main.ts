@@ -31,15 +31,22 @@ async function start(): Promise<void> {
   // with the top half reserved for the game and the lower part for the thumb controls.
   const touch = isTouchDevice();
   const host = document.getElementById('game');
+  // Portrait phones: turn the whole game (picture + controls) 90 degrees so it fills the tall screen as a landscape layout.
+  const rot = document.createElement('div');
+  rot.id = 'rot';
+  if (touch && host) { document.body.appendChild(rot); rot.appendChild(host); }
   const fit = (): void => {
     const w = window.innerWidth, h = window.innerHeight;
     if (touch) {
-      const portrait = h > w;
-      game.scale.setZoom(Math.max(1, Math.min(w / VIEW_W, (portrait ? h * 0.5 : h) / VIEW_H)));
-      if (host) host.style.alignItems = portrait ? 'flex-start' : 'center';
+      const turned = h > w;
+      const fw = turned ? h : w, fh = turned ? w : h;
+      rot.dataset.turned = turned ? '1' : '0';
+      Object.assign(rot.style, { position: 'fixed', top: '0', width: `${fw}px`, height: `${fh}px`, transformOrigin: '0 0',
+        left: turned ? `${w}px` : '0', transform: turned ? 'rotate(90deg)' : 'none' });
+      game.scale.setZoom(Math.max(1, Math.min(fw / VIEW_W, fh / VIEW_H)));
     } else game.scale.setZoom(Math.max(1, Math.floor(Math.min(w / VIEW_W, h / VIEW_H))));
   };
-  if (touch) new TouchControls();
+  if (touch) new TouchControls(rot);
   fit();
   window.addEventListener('resize', fit);
   new DebugMenu(game);
