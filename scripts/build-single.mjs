@@ -1,6 +1,7 @@
 // Bundles the production build into ONE self-contained HTML file (JS, CSS and fonts inlined) - used for the Artifact.
 import { build } from 'vite';
 import { readFileSync, readdirSync, writeFileSync, mkdirSync } from 'node:fs';
+process.env.VITE_SINGLE_FILE = '1';
 await build({ logLevel: 'warn', build: { outDir: 'dist-single', assetsInlineLimit: 100_000_000, cssCodeSplit: false, chunkSizeWarningLimit: 5000 } });
 const dir = 'dist-single/assets';
 const files = readdirSync(dir);

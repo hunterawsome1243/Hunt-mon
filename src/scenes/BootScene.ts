@@ -20,7 +20,8 @@ export class BootScene extends Phaser.Scene {
   constructor() { super('boot'); }
 
   preload(): void {
-    this.load.json('manifest', 'assets/manifest.json');
+    // the single-file build has no sibling files to fetch
+    if (!(import.meta as unknown as { env: Record<string, string> }).env.VITE_SINGLE_FILE) this.load.json('manifest', 'assets/manifest.json');
 
   }
 

@@ -120,7 +120,7 @@ export class TitleScene extends Phaser.Scene {
       const layer = this.add.container(0, 0).setDepth(DEPTH.ui - 40);
       layer.add(backdrop(this, 'YOUR NAME?'));
       this.logo.setVisible(false); this.input2.textMode = true;
-      const nameT = text(this, 120, 24, '', COL.ink).setOrigin(0.5, 0).setScale(1.5);
+      const nameT = text(this, 120, 24, '', COL.ink).setOrigin(0.5, 0).setScale(1.25);
       layer.add(win(this, 40, 19, 160, 26)); layer.add(nameT);
       const grid = this.add.container(0, 0); layer.add(grid);
       let name = '', cx = 0, cy = 0;
